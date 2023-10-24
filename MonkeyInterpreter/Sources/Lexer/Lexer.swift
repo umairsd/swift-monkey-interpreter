@@ -41,13 +41,30 @@ public class Lexer {
     var token: Token
     switch ch {
     case "=":
-      token = Token(type: .assign, literal: String(ch))
+      if let nextCh = peekNextChar(), nextCh == "=" {
+        // Since we've peeked at the next character, and want to handle it,
+        // move the position forward by one.
+        moveToNextChar()
+        token = Token(type: .eq, literal: String(ch) + String(nextCh))
+      } else {
+        token = Token(type: .assign, literal: String(ch))
+      }
+
     case "+":
       token = Token(type: .plus, literal: String(ch))
     case "-":
       token = Token(type: .minus, literal: String(ch))
+
     case "!":
-      token = Token(type: .bang, literal: String(ch))
+      if let nextCh = peekNextChar(), nextCh == "=" {
+        // Since we've peeked at the next character, and want to handle it,
+        // move the position forward by one.
+        moveToNextChar()
+        token = Token(type: .notEq, literal: String(ch) + String(nextCh))
+      } else {
+        token = Token(type: .bang, literal: String(ch))
+      }
+
     case "*":
       token = Token(type: .asterisk, literal: String(ch))
     case "/":
@@ -143,6 +160,18 @@ public class Lexer {
       position = nextReadPosition
       nextReadPosition = input.index(after: nextPosition)
     }
+  }
+
+
+  /// Reads the next character. This is the character at `nextReadPosition`, assuming
+  /// the index is valid. 
+  private func peekNextChar() -> Character? {
+    guard let nextP = nextReadPosition,
+            nextP < input.endIndex
+    else {
+      return nil
+    }
+    return input[nextP]
   }
 
 

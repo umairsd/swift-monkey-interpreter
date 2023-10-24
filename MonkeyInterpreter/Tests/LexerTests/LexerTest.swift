@@ -69,6 +69,36 @@ final class LexerTest: XCTestCase {
   }
 
 
+  func testNextToken_basic3Equality() throws {
+    let input = """
+    10 == 10;
+
+    10 != 9;
+    """
+
+    let lexer = Lexer(input: input)
+    let expectedTokens = [
+      Token(type: .int, literal: "10"),
+      Token(type: .eq, literal: "=="),
+      Token(type: .int, literal: "10"),
+      Token(type: .semicolon, literal: ";"),
+
+      Token(type: .int, literal: "10"),
+      Token(type: .notEq, literal: "!="),
+      Token(type: .int, literal: "9"),
+      Token(type: .semicolon, literal: ";"),
+
+      Token(type: .eof, literal: ""),
+    ]
+
+    for expectedToken in expectedTokens {
+      let token = lexer.nextToken()
+      XCTAssertEqual(token.type, expectedToken.type)
+      XCTAssertEqual(token.literal, expectedToken.literal)
+    }
+  }
+
+
   func testNextToken_basicWithWhitespace() throws {
     let input = "   =+(){},;   "
 

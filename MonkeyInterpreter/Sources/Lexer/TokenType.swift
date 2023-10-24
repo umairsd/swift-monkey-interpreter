@@ -20,6 +20,8 @@ public enum TokenType: String {
   case slash = "/"
   case lt
   case gt 
+  case eq
+  case notEq
 
   // Delimiters
   case comma
