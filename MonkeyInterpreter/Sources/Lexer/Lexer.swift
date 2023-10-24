@@ -19,7 +19,7 @@ public class Lexer {
   init(input: String) {
     self.input = input
     self.nextReadPosition = input.startIndex
-    readChar()
+    moveToNextChar()
   }
 
   // MARK: - Public API
@@ -27,12 +27,16 @@ public class Lexer {
   public func nextToken() -> Token {
     // If the current position is at the end of the source code (`input.endIndex`),
     // return the EOF token.
-    guard let p = position,
-            p < input.endIndex,
-            let ch = currentChar
-    else {
+    guard let p = position, p < input.endIndex else {
       return Token(type: .eof, literal: "")
     }
+
+    skipWhitespace()
+
+    guard let ch = currentChar else {
+      return Token(type: .eof, literal: "")
+    }
+
 
     var token: Token
     switch ch {
@@ -54,17 +58,65 @@ public class Lexer {
       token = Token(type: .plus, literal: String(ch))
 
     default:
-      token = Token(type: .illegal, literal: "")
+      if ch.isLetter {
+        guard let identiferName = readIdentifier() else {
+          fatalError()
+        }
+        let identifierType = TokenType.lookupIdentifer(identiferName)
+        token = Token(type: identifierType, literal: identiferName)
+        // While reading the identifer, we've already called `readChar()`. There's no need to
+        // call `readChar()` at the end of the switch statement.
+        return token
+
+      } else if ch.isNumber {
+        guard let number = readNumber() else {
+          fatalError()
+        }
+        token = Token(type: .int, literal: number)
+        return token
+
+      } else {
+        token = Token(type: .illegal, literal: "")
+      }
     }
 
-    readChar()
+    moveToNextChar()
     return token
   }
 
   
   // MARK: - Private
 
-  func readChar() {
+
+  /// Reads in an identifier, and advances the lexer's positions until it enounters a non-letter
+  /// character.
+  private func readIdentifier() -> String? {
+    return readCharacters { $0.isLetter }
+  }
+
+
+  /// Reads in an identifier, and advances the lexer's positions until it enounters a non-letter
+  /// character.
+  private func readNumber() -> String? {
+    return readCharacters { $0.isNumber }
+  }
+
+
+  private func readCharacters(where predicate: (Character) -> Bool) -> String? {
+    guard let startingPosition = self.position else { return nil }
+    while let c = currentChar, predicate(c) {
+      moveToNextChar()
+    }
+
+    guard let endingPosition = self.position else { return nil }
+    let subString = input[startingPosition..<endingPosition]
+    return String(subString)
+  }
+
+
+  /// Advances our position in the input string. If it reaches the end of the string, it
+  /// sets the `currentChar` and the `nextReadPosition` to nil.
+  private func moveToNextChar() {
     guard let nextPosition = nextReadPosition else {
       return
     }
@@ -77,6 +129,13 @@ public class Lexer {
       currentChar = input[nextPosition]
       position = nextReadPosition
       nextReadPosition = input.index(after: nextPosition)
+    }
+  }
+
+
+  private func skipWhitespace() {
+    while let ch = currentChar, ch.isWhitespace {
+      moveToNextChar()
     }
   }
 

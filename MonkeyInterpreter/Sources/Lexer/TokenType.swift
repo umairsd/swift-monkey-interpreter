@@ -28,3 +28,24 @@ public enum TokenType: String {
   case function = "Function"
   case `let` = "let"
 }
+
+
+extension TokenType {
+
+  /// A map of keywords in the Money language.
+  private static let keywords: [String: TokenType] = [
+    "fn": .function,
+    "let": .let
+  ]
+
+
+  /// Given the name of an identifer, returns the corresponding `keyword`, if any exists.
+  /// Otherwise, returns `.ident` to signify a generic identifier.
+  static func lookupIdentifer(_ identifer: String) -> TokenType {
+    if let type = Self.keywords[identifer] {
+      return type
+    }
+
+    return .ident
+  }
+}
