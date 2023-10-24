@@ -16,6 +16,10 @@ let package = Package(
       name: "Lexer",
       dependencies: []
     ),
+    .target(
+      name: "Repl",
+      dependencies: ["Lexer"]
+    ),
     .testTarget(
       name: "LexerTests",
       dependencies: ["Lexer"]

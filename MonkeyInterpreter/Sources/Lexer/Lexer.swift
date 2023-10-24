@@ -16,7 +16,7 @@ public class Lexer {
   private var nextReadPosition: String.Index?
 
 
-  init(input: String) {
+  public init(input: String) {
     self.input = input
     self.nextReadPosition = input.startIndex
     moveToNextChar()

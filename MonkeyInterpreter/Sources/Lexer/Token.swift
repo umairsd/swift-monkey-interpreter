@@ -3,6 +3,6 @@
 import Foundation
 
 public struct Token {
-  let type: TokenType
-  let literal: String
+  public let type: TokenType
+  public let literal: String
 }
