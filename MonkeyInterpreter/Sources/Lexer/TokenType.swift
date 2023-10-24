@@ -12,21 +12,32 @@ public enum TokenType: String {
   case int
 
   // Operators
-  case assign = "="
-  case plus = "+"
+  case assign
+  case plus
+  case minus
+  case bang = "!"
+  case asterisk = "*"
+  case slash = "/"
+  case lt
+  case gt 
 
   // Delimiters
-  case comma = ","
-  case semicolon = ";"
+  case comma
+  case semicolon
 
-  case lParen = "("
-  case rParen = ")"
-  case lBrace = "{"
-  case rBrace = "}"
+  case lParen
+  case rParen
+  case lBrace
+  case rBrace
 
   // Keywords
-  case function = "Function"
-  case `let` = "let"
+  case function
+  case `let`
+  case `true`
+  case `false`
+  case `if`
+  case `else`
+  case `return`
 }
 
 
@@ -35,7 +46,12 @@ extension TokenType {
   /// A map of keywords in the Money language.
   private static let keywords: [String: TokenType] = [
     "fn": .function,
-    "let": .let
+    "let": .let,
+    "true": .true,
+    "false": .false,
+    "if": .if,
+    "else": .else,
+    "return": .return
   ]
 
 

@@ -37,6 +37,38 @@ final class LexerTest: XCTestCase {
   }
 
 
+  func testNextToken_basic2() throws {
+    let input = """
+    !-/*5;
+    5 < 10 > 5;
+    """
+
+    let lexer = Lexer(input: input)
+    let expectedTokens = [
+      Token(type: .bang, literal: "!"),
+      Token(type: .minus, literal: "-"),
+      Token(type: .slash, literal: "/"),
+      Token(type: .asterisk, literal: "*"),
+      Token(type: .int, literal: "5"),
+      Token(type: .semicolon, literal: ";"),
+
+      Token(type: .int, literal: "5"),
+      Token(type: .lt, literal: "<"),
+      Token(type: .int, literal: "10"),
+      Token(type: .gt, literal: ">"),
+      Token(type: .int, literal: "5"),
+      Token(type: .semicolon, literal: ";"),
+      Token(type: .eof, literal: ""),
+    ]
+
+    for expectedToken in expectedTokens {
+      let token = lexer.nextToken()
+      XCTAssertEqual(token.type, expectedToken.type)
+      XCTAssertEqual(token.literal, expectedToken.literal)
+    }
+  }
+
+
   func testNextToken_basicWithWhitespace() throws {
     let input = "   =+(){},;   "
 
@@ -104,7 +136,56 @@ final class LexerTest: XCTestCase {
   }
 
 
-  func testNextToken_BasicProgram() throws {
+  func testNextToken_programBasic() throws {
+    let input = """
+    if (5 < 10) {
+     return true;
+    } else {
+     return false;
+    }
+    """
+
+    let lexer = Lexer(input: input)
+    let expectedTokens = [
+      // if (5 < 10) {
+      Token(type: .if, literal: "if"),
+      Token(type: .lParen, literal: "("),
+      Token(type: .int, literal: "5"),
+      Token(type: .lt, literal: "<"),
+      Token(type: .int, literal: "10"),
+      Token(type: .rParen, literal: ")"),
+      Token(type: .lBrace, literal: "{"),
+
+      //  return true;
+      Token(type: .return, literal: "return"),
+      Token(type: .true, literal: "true"),
+      Token(type: .semicolon, literal: ";"),
+
+      // } else {
+      Token(type: .rBrace, literal: "}"),
+      Token(type: .else, literal: "else"),
+      Token(type: .lBrace, literal: "{"),
+
+      //  return false;
+      Token(type: .return, literal: "return"),
+      Token(type: .false, literal: "false"),
+      Token(type: .semicolon, literal: ";"),
+
+      // }
+      Token(type: .rBrace, literal: "}"),
+
+      Token(type: .eof, literal: ""),
+    ]
+
+    for expectedToken in expectedTokens {
+      let token = lexer.nextToken()
+      XCTAssertEqual(token.type, expectedToken.type)
+      XCTAssertEqual(token.literal, expectedToken.literal)
+    }
+  }
+
+
+  func testNextToken_programConditional() throws {
     let input = """
     let five = 5;
     let ten = 10;
@@ -174,6 +255,5 @@ final class LexerTest: XCTestCase {
       XCTAssertEqual(token.type, expectedToken.type)
       XCTAssertEqual(token.literal, expectedToken.literal)
     }
-
   }
 }

@@ -42,6 +42,21 @@ public class Lexer {
     switch ch {
     case "=":
       token = Token(type: .assign, literal: String(ch))
+    case "+":
+      token = Token(type: .plus, literal: String(ch))
+    case "-":
+      token = Token(type: .minus, literal: String(ch))
+    case "!":
+      token = Token(type: .bang, literal: String(ch))
+    case "*":
+      token = Token(type: .asterisk, literal: String(ch))
+    case "/":
+      token = Token(type: .slash, literal: String(ch))
+    case "<":
+      token = Token(type: .lt, literal: String(ch))
+    case ">":
+      token = Token(type: .gt, literal: String(ch))
+
     case ";":
       token = Token(type: .semicolon, literal: String(ch))
     case "(":
@@ -54,13 +69,11 @@ public class Lexer {
       token = Token(type: .rBrace, literal: String(ch))
     case ",":
       token = Token(type: .comma, literal: String(ch))
-    case "+":
-      token = Token(type: .plus, literal: String(ch))
 
     default:
       if ch.isLetter {
         guard let identiferName = readIdentifier() else {
-          fatalError()
+          fatalError("Error: Unable to read the token for identifer name.")
         }
         let identifierType = TokenType.lookupIdentifer(identiferName)
         token = Token(type: identifierType, literal: identiferName)
@@ -84,7 +97,7 @@ public class Lexer {
     return token
   }
 
-  
+
   // MARK: - Private
 
 
