@@ -8,8 +8,8 @@ import Token
 ///
 /// This second use-case is why the Identifier type is an `Expression`.
 ///
-public struct Identifier: Expression {
-  public let token: Token
+public class Identifier: Expression {
+
   public let value: String
 
   public init(token: Token, value: String) {
@@ -17,12 +17,7 @@ public struct Identifier: Expression {
     self.value = value
   }
 
-  // MARK: - Expression
+  // MARK: - Protocol (Expression)
 
-  public func expressionNode() {
-  }
-
-  public func tokenLiteral() -> String {
-    return token.literal
-  }
+  public let token: Token
 }

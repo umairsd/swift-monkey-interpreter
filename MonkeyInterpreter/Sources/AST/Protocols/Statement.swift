@@ -6,3 +6,11 @@ public protocol Statement: Node {
 
   func statementNode()
 }
+
+
+extension Statement {
+  
+  // Default implementation. Empty
+  public func statementNode() {
+  }
+}

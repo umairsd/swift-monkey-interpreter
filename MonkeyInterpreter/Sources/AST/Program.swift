@@ -1,6 +1,7 @@
 // Created on 10/25/23.
 
 import Foundation
+import Token
 
 public class Program: Node {
 
@@ -8,14 +9,17 @@ public class Program: Node {
 
   public init() {}
 
-  public func tokenLiteral() -> String {
-    guard let firstStatement = statements.first else {
-      return ""
-    }
-    return firstStatement.tokenLiteral()
-  }
-
   public func appendStatement(_ s: Statement) {
     statements.append(s)
+  }
+
+
+  // MARK: - Protocol (Node)
+
+  public var token: Token {
+    guard let firstStatement = statements.first else {
+      fatalError()
+    }
+    return firstStatement.token
   }
 }

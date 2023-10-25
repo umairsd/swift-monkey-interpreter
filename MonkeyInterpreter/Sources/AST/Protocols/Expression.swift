@@ -6,3 +6,11 @@ public protocol Expression: Node {
   
   func expressionNode()
 }
+
+
+extension Expression {
+
+  // Default implementation. Empty
+  public func expressionNode() {
+  }
+}
