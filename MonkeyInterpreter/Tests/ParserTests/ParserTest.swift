@@ -34,6 +34,38 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testReturnStatement() throws {
+    let input = """
+    return 5;
+    return 10;
+    return 838383;
+    """
+
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    checkParserErrors(parser)
+
+    XCTAssertEqual(program.statements.count, 3)
+
+    for statement in program.statements {
+      XCTAssertEqual(
+        statement.tokenLiteral(),
+        "return",
+        "statement.tokenLiteral() not `return`. Got=\(statement.tokenLiteral())")
+
+      XCTAssertTrue(statement is ReturnStatement, "statement is not of the type `ReturnStatement`.")
+
+      // let returnStatement = statement as! ReturnStatement
+      // TODO: Validate the "return expression"
+    }
+  }
+
+
   // MARK: - Private
 
   private func validateLetStatement(_ statement: Statement, identifier name: String) throws {
@@ -51,6 +83,7 @@ final class ParserTest: XCTestCase {
       name,
       "letStatement.name.tokenLiteral() not \(name). Got=\(letStatement.name.tokenLiteral())")
 
+    // TODO: Validate the expression to the right of assignment.
     XCTAssertEqual(
       letStatement.name.value,
       name,

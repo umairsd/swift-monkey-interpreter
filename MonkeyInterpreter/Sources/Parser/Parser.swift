@@ -43,29 +43,29 @@ public class Parser {
 
   /// Parses a `Statement` based on the type of the current token.
   private func parseStatement() -> Statement? {
-    switch currentToken.type {
+    return switch currentToken.type {
     case .let:
-      return parseLetStatement()
+      parseLetStatement()
+    case .return:
+      parseReturnStatement()
     default:
-      return nil
+      nil
     }
   }
 
 
   /// Parses a `LetStatement` starting from the current token.
   private func parseLetStatement() -> Statement? {
+    assert(currentToken.type == .let)
+
     let t = currentToken
 
     // Parse the name.
-    guard expectPeekAndContinue(.ident) else {
-      return nil
-    }
+    guard expectPeekAndContinue(.ident) else { return nil }
     let nameIdentifier = Identifier(token: currentToken, value: currentToken.literal)
 
     // Parse the assignment operator.
-    guard expectPeekAndContinue(.assign) else {
-      return nil
-    }
+    guard expectPeekAndContinue(.assign) else { return nil }
 
     // Parse the assignment expression.
     // TODO: We're skipping the "expression" part for now.
@@ -74,6 +74,23 @@ public class Parser {
     }
 
     let stmt = LetStatement(token: t, name: nameIdentifier)
+    return stmt
+  }
+
+
+  /// Parses a return statement starting from the current token.
+  private func parseReturnStatement() -> Statement? {
+    assert(currentToken.type == .return)
+
+    let t = currentToken
+
+    // Parse the expression to be returned
+    // TODO: We're skipping the "expression" part for now.
+    while !currentTokenIs(.semicolon) {
+      moveToNextToken()
+    }
+
+    let stmt = ReturnStatement(token: t)
     return stmt
   }
 
