@@ -1,7 +1,7 @@
 // Created on 10/25/23.
 
 import Foundation
-import Lexer
+import Token
 
 public struct Identifier{
   let token: Token

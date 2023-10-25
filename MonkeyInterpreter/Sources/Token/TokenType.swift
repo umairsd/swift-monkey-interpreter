@@ -59,7 +59,7 @@ extension TokenType {
 
   /// Given the name of an identifer, returns the corresponding `keyword`, if any exists.
   /// Otherwise, returns `.ident` to signify a generic identifier.
-  static func lookupIdentifer(_ identifer: String) -> TokenType {
+  public static func lookupIdentifer(_ identifer: String) -> TokenType {
     if let type = Self.keywords[identifer] {
       return type
     }

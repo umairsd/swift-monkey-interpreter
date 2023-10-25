@@ -13,23 +13,28 @@ let package = Package(
     // Targets can depend on other targets in this package and products from dependencies.
     .executableTarget(
       name: "MonkeyInterpreter",
-      dependencies: ["Lexer", "Repl"]
-    ),
-    .target(
-      name: "Lexer",
-      dependencies: []
+      dependencies: ["Repl"]
     ),
     .target(
       name: "AST",
-      dependencies: ["Lexer"]
+      dependencies: ["Token"]
+    ),
+    .target(
+      name: "Lexer",
+      dependencies: ["Token"]
     ),
     .target(
       name: "Repl",
       dependencies: ["Lexer"]
     ),
+    .target(
+      name: "Token",
+      dependencies: []
+    ),
+    // Test Targets
     .testTarget(
       name: "LexerTests",
-      dependencies: ["Lexer"]
+      dependencies: ["Lexer", "Token"]
     )
   ]
 )

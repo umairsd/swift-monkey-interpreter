@@ -1,6 +1,7 @@
 // Created on 10/23/23.
 
 import XCTest
+import Token
 @testable import Lexer
 
 final class LexerTest: XCTestCase {
