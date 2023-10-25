@@ -6,14 +6,16 @@ import Token
 public class LetStatement: Statement {
 
   /// The token that's represented by this node in the AST.
-  private let token: Token
+  public let token: Token
   /// The name of the variable in a let statement.
-  private let name: Identifier
+  public let name: Identifier
   /// The expression to the right of the equal sign.
-  private let value: Expression
+  // TODO: Make this non-optional.
+  public let value: Expression?
 
 
-  public init(token: Token, name: Identifier, value: Expression) {
+
+  public init(token: Token, name: Identifier, value: Expression? = nil) {
     self.token = token
     self.name = name
     self.value = value

@@ -9,8 +9,13 @@ import Token
 /// This second use-case is why the Identifier type is an `Expression`.
 ///
 public struct Identifier: Expression {
-  let token: Token
-  let value: String
+  public let token: Token
+  public let value: String
+
+  public init(token: Token, value: String) {
+    self.token = token
+    self.value = value
+  }
 
   // MARK: - Expression
 

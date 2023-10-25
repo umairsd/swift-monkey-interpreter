@@ -4,16 +4,18 @@ import Foundation
 
 public class Program: Node {
 
-  private var statements: [Statement]
+  public private(set) var statements: [Statement] = []
 
-  public init(statements: [Statement]) {
-    self.statements = statements
-  }
+  public init() {}
 
   public func tokenLiteral() -> String {
     guard let firstStatement = statements.first else {
       return ""
     }
     return firstStatement.tokenLiteral()
+  }
+
+  public func appendStatement(_ s: Statement) {
+    statements.append(s)
   }
 }
