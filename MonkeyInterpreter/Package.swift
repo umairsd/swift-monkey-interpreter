@@ -20,6 +20,10 @@ let package = Package(
       dependencies: []
     ),
     .target(
+      name: "AST",
+      dependencies: ["Lexer"]
+    ),
+    .target(
       name: "Repl",
       dependencies: ["Lexer"]
     ),
