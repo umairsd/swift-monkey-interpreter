@@ -3,10 +3,13 @@
 import Foundation
 import Token
 
-public class LetStatement {
+public class LetStatement: Statement {
 
+  /// The token that's represented by this node in the AST.
   private let token: Token
+  /// The name of the variable in a let statement.
   private let name: Identifier
+  /// The expression to the right of the equal sign.
   private let value: Expression
 
 
@@ -15,11 +18,9 @@ public class LetStatement {
     self.name = name
     self.value = value
   }
-}
 
+  // MARK: - Statement
 
-extension LetStatement: Statement {
-  
   public func statementNode() {
   }
 
