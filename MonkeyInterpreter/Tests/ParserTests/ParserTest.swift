@@ -21,6 +21,7 @@ final class ParserTest: XCTestCase {
       XCTFail("`parseProgram()` failed to parse the input.")
       return
     }
+    checkParserErrors(parser)
 
     let expectedIdentifiers = ["x", "y", "foobar"]
     XCTAssertEqual(program.statements.count, 3)
@@ -32,6 +33,8 @@ final class ParserTest: XCTestCase {
     }
   }
 
+
+  // MARK: - Private
 
   private func validateLetStatement(_ statement: Statement, identifier name: String) throws {
     XCTAssertEqual(
@@ -52,5 +55,13 @@ final class ParserTest: XCTestCase {
       letStatement.name.value,
       name,
       "letStatement.name.value not \(name). Got=\(letStatement.name.value)")
+  }
+
+
+  private func checkParserErrors(_ parser: Parser) {
+    if parser.errors.count > 0 {
+      print("Parser has \(parser.errors.count) errors.")
+      parser.errors.forEach { print($0) }
+    }
   }
 }

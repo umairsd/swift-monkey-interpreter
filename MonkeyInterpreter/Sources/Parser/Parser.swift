@@ -6,7 +6,7 @@ import Token
 import AST
 
 public class Parser {
-  
+
   /// Pointer to an instance of the lexer, on which we repeatedly call `nextToken` to
   /// get the next token in the input.
   private let lexer: Lexer
@@ -15,6 +15,8 @@ public class Parser {
   /// The next token in the lexer. Used if `currentToken` doesn't give us enough
   /// information for a parsing decision.
   private var peekToken: Token?
+
+  public private(set) var errors: [String] = []
 
 
   public init(lexer: Lexer) {
@@ -55,26 +57,21 @@ public class Parser {
     let t = currentToken
 
     // Parse the name.
-    guard peekTokenIs(.ident) else {
+    guard expectPeekAndContinue(.ident) else {
       return nil
     }
-    moveToNextToken()
     let nameIdentifier = Identifier(token: currentToken, value: currentToken.literal)
 
     // Parse the assignment operator.
-    guard peekTokenIs(.assign) else {
+    guard expectPeekAndContinue(.assign) else {
       return nil
     }
-    moveToNextToken()
 
     // Parse the assignment expression.
     // TODO: We're skipping the "expression" part for now.
-    moveToNextToken()
-
-    guard peekTokenIs(.semicolon) else {
-      return nil
+    while !currentTokenIs(.semicolon) {
+      moveToNextToken()
     }
-    moveToNextToken()
 
     let stmt = LetStatement(token: t, name: nameIdentifier)
     return stmt
@@ -93,6 +90,19 @@ public class Parser {
   }
 
 
+  /// Validates that the `peekToken` is of the expected type. If so, it increments the two
+  /// tokens and returns true. If the `peekToken`
+  private func expectPeekAndContinue(_ tokenType: TokenType) -> Bool {
+    if peekTokenIs(tokenType) {
+      moveToNextToken()
+      return true
+    } else {
+      peekError(tokenType)
+      return false
+    }
+  }
+
+
   private func currentTokenIs(_ tokenType: TokenType) -> Bool {
     return currentToken.type == tokenType
   }
@@ -102,5 +112,12 @@ public class Parser {
       return false
     }
     return peek.type == tokenType
+  }
+
+
+  private func peekError(_ tokenType: TokenType) {
+    let peekTokenString = peekToken == nil ? "nil" : "\(peekToken!.type)"
+    let message = "expected next token to be \(tokenType), got \(peekTokenString) instead."
+    errors.append(message)
   }
 }
