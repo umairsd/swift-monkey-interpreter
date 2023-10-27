@@ -20,4 +20,8 @@ public class Identifier: Expression {
   // MARK: - Protocol (Expression)
 
   public let token: Token
+
+  public func toString() -> String {
+    return value
+  }
 }

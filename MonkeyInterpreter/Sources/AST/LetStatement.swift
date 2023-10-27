@@ -21,4 +21,14 @@ public class LetStatement: Statement {
   // MARK: - Protocol (Statement)
 
   public let token: Token
+
+
+  public func toString() -> String {
+    var result = "\(tokenLiteral()) \(name.toString()) = "
+    if let v = value {
+      result += v.toString()
+    }
+    result += ";"
+    return result
+  }
 }

@@ -16,10 +16,10 @@ import Token
 public class ExpressionStatement: Statement {
 
   /// The expression that's being wrapped.
-  public let expression: Expression
+  public let expression: Expression?
 
 
-  public init(token: Token, expression: Expression) {
+  public init(token: Token, expression: Expression? = nil) {
     self.expression = expression
     self.token = token
   }
@@ -28,4 +28,12 @@ public class ExpressionStatement: Statement {
   // MARK: - Protocol (Statement)
 
   public let token: Token
+
+
+  public func toString() -> String {
+    if let e = expression {
+      return e.toString()
+    }
+    return ""
+  }
 }

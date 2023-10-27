@@ -5,9 +5,11 @@ import Token
 
 public class Program: Node {
 
-  public private(set) var statements: [Statement] = []
+  public private(set) var statements: [Statement]
 
-  public init() {}
+  public init(statements: [Statement] = []) {
+    self.statements = statements
+  }
 
   public func appendStatement(_ s: Statement) {
     statements.append(s)
@@ -21,5 +23,13 @@ public class Program: Node {
       fatalError()
     }
     return firstStatement.token
+  }
+
+
+  public func toString() -> String {
+    let result = statements.reduce("") { partialResult, stmt in
+      partialResult + stmt.toString() + "\n"
+    }
+    return result
   }
 }

@@ -37,6 +37,10 @@ let package = Package(
     ),
     // Test Targets
     .testTarget(
+      name: "ASTTests",
+      dependencies: ["AST", "Token"]
+    ),
+    .testTarget(
       name: "LexerTests",
       dependencies: ["Lexer", "Token"]
     ),
