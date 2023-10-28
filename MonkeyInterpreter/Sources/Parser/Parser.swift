@@ -7,7 +7,7 @@ import AST
 
 // TODO: Explore changing such that these functions accept the `Token` type.
 public typealias PrefixParseFn = () -> Expression?
-public typealias InfixParseFn = (Expression) -> Expression?
+public typealias InfixParseFn = (Expression?) -> Expression?
 
 
 public class Parser {
@@ -23,6 +23,9 @@ public class Parser {
   /// A list of errors generated during parsing.
   public private(set) var errors: [String] = []
 
+
+  /// Precedence mapper.
+  private let precedenceMapper = PrecedenceMapper()
   /// Map of token type to the function that that parses that function (Prefix).
   private var prefixParseFunctions: [TokenType: PrefixParseFn] = [:]
   /// Map of token type to the function that that parses that function (Infix).
@@ -42,6 +45,15 @@ public class Parser {
     registerPrefix(for: .int, fn: parseIntegerLiteral)
     registerPrefix(for: .bang, fn: parsePrefixExpression)
     registerPrefix(for: .minus, fn: parsePrefixExpression)
+
+    registerInfix(for: .plus, fn: parseInfixExpression(left:))
+    registerInfix(for: .minus, fn: parseInfixExpression(left:))
+    registerInfix(for: .asterisk, fn: parseInfixExpression(left:))
+    registerInfix(for: .slash, fn: parseInfixExpression(left:))
+    registerInfix(for: .lt, fn: parseInfixExpression(left:))
+    registerInfix(for: .gt, fn: parseInfixExpression(left:))
+    registerInfix(for: .eq, fn: parseInfixExpression(left:))
+    registerInfix(for: .notEq, fn: parseInfixExpression(left:))
   }
 
 
@@ -87,7 +99,7 @@ public class Parser {
   private func parseExpressionStatement() -> ExpressionStatement? {
     let stmt = ExpressionStatement(
       token: currentToken,
-      expression: parseExpressionWith(precedence: .lowest))
+      expression: parseExpression(withPrecedence: .lowest))
 
     if peekTokenIs(.semicolon) {
       moveToNextToken()
@@ -96,12 +108,26 @@ public class Parser {
   }
 
 
-  private func parseExpressionWith(precedence: Precedence) -> Expression? {
-    guard let prefixFn = prefixParseFunctions[currentToken.type] else {
+  /// Parses an expression with a given precedence (defaults to `.lowest`).
+  private func parseExpression(withPrecedence p: Precedence = .lowest) -> Expression? {
+    guard let prefixFn = prefixParseFn(for: currentToken) else {
       noPrefixParseFnError(currentToken.type)
       return nil
     }
-    let leftExp = prefixFn()
+    var leftExp = prefixFn()
+
+    // The magic: In the loop’s body the method tries to find infixParseFns for the next
+    // token. If it finds such a function, it calls it, passing in the expression returned
+    // by a prefixParseFn as an argument. And it does all this again and again until it
+    // encounters a token that has a lower precedence.
+    while !peekTokenIs(.semicolon) && p.rawValue < peekPrecedence().rawValue {
+      guard let infixFn = infixParseFn(for: peekToken) else {
+        return leftExp
+      }
+
+      moveToNextToken()
+      leftExp = infixFn(leftExp)
+    }
     return leftExp
   }
 
@@ -162,6 +188,7 @@ public class Parser {
   }
 
 
+  /// Parses a prefix expression.
   private func parsePrefixExpression() -> Expression? {
     assert(currentTokenIs(.bang) || currentTokenIs(.minus))
 
@@ -170,7 +197,7 @@ public class Parser {
 
     moveToNextToken()
 
-    guard let rightExpression = parseExpressionWith(precedence: .prefix) else {
+    guard let rightExpression = parseExpression(withPrecedence: .prefix) else {
       errors.append("Unable to parse the right expression for the Prefix Expression.")
       return nil
     }
@@ -179,6 +206,31 @@ public class Parser {
       token: token,
       prefixOperator: prefixOperator,
       rightExpression: rightExpression)
+    return expr
+  }
+
+
+  /// Parses an infix expression.
+  private func parseInfixExpression(left: Expression?) -> Expression? {
+    guard let leftExpr = left else {
+      return nil
+    }
+    let token = currentToken
+    let infixOperator = currentToken.literal
+    let precedence = currentPrecedence()
+
+    moveToNextToken()
+
+    guard let right = parseExpression(withPrecedence: precedence) else {
+      errors.append("Unable to parse the right expression for the Infix Expression.")
+      return nil
+    }
+
+    let expr = InfixExpression(
+      token: token,
+      leftExpression: leftExpr,
+      infixOperator: infixOperator,
+      rightExpression: right)
     return expr
   }
 
@@ -220,9 +272,33 @@ public class Parser {
     return peekT.isType(tokenType)
   }
 
+  private func peekPrecedence() -> Precedence {
+    return precedenceMapper.precedence(for: peekToken)
+  }
+
+  private func currentPrecedence() -> Precedence {
+    return precedenceMapper.precedence(for: currentToken)
+  }
+
+
+  private func prefixParseFn(for token: Token?) -> PrefixParseFn? {
+    guard let t = token else {
+      return nil
+    }
+    return prefixParseFunctions[t.type]
+  }
+
+
+  private func infixParseFn(for token: Token?) -> InfixParseFn? {
+    guard let t = token else {
+      return nil
+    }
+    return infixParseFunctions[t.type]
+  }
+
 
   private func noPrefixParseFnError(_ tokenType: TokenType) {
-    let msg = "No prefix parse function for \(tokenType) found."
+    let msg = "No prefix parse function for `\(tokenType)` found."
     errors.append(msg)
   }
 

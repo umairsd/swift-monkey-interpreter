@@ -130,13 +130,68 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testInfixExpression() throws {
+    try validateInfixExpression("5 + 5", leftValue: 5, expectedOperator: "+", rightValue: 5)
+    try validateInfixExpression("5 - 5", leftValue: 5, expectedOperator: "-", rightValue: 5)
+    try validateInfixExpression("5 * 5", leftValue: 5, expectedOperator: "*", rightValue: 5)
+    try validateInfixExpression("5 / 5", leftValue: 5, expectedOperator: "/", rightValue: 5)
+    try validateInfixExpression("5 > 5", leftValue: 5, expectedOperator: ">", rightValue: 5)
+    try validateInfixExpression("5 < 5", leftValue: 5, expectedOperator: "<", rightValue: 5)
+    try validateInfixExpression("5 == 5", leftValue: 5, expectedOperator: "==", rightValue: 5)
+    try validateInfixExpression("5 != 5", leftValue: 5, expectedOperator: "!=", rightValue: 5)
+  }
+
+
   // MARK: - Private
+
+
+  private func validateInfixExpression(
+    _ input: String,
+    leftValue: Int,
+    expectedOperator: String,
+    rightValue: Int
+  ) throws {
+
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+    XCTAssertTrue(
+      program.statements[0] is ExpressionStatement,
+      "statement is not of the type `ExpressionStatement`.")
+
+    let expressionStatement = program.statements[0] as! ExpressionStatement
+    XCTAssertNotNil(expressionStatement.expression)
+
+    XCTAssertTrue(
+      expressionStatement.expression! is InfixExpression,
+      "expressionStatement.expression is not of the type `InfixExpression`.")
+    let infixExpression = expressionStatement.expression! as! InfixExpression
+
+    try validateIntegerLiteral(infixExpression.leftExpression, expectedValue: leftValue)
+
+    XCTAssertEqual(
+      infixExpression.infixOperator,
+      expectedOperator,
+      "infixExpression.operator not \(expectedOperator). Got=\(infixExpression.infixOperator)")
+
+    try validateIntegerLiteral(infixExpression.rightExpression, expectedValue: rightValue)
+  }
 
 
   private func validatePrefixExpression(
     _ input: String,
-    expectedOperator:
-    String, integerValue: Int
+    expectedOperator: String,
+    integerValue: Int
   ) throws {
 
     let lexer = Lexer(input: input)

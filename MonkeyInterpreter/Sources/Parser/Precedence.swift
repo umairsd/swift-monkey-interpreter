@@ -1,10 +1,11 @@
 // Created on 10/27/23.
 
 import Foundation
+import Token
 
 
 public enum Precedence: Int {
-  case lowest
+  case lowest = 0
   case equals // ==
   case lessGreater // < or >
   case sum // +

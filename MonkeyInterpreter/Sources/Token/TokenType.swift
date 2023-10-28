@@ -13,7 +13,7 @@ public enum TokenType: String {
 
   // Operators
   case assign
-  case plus
+  case plus = "+"
   case minus
   case bang = "!"
   case asterisk = "*"
