@@ -93,11 +93,46 @@ final class ParserTest: XCTestCase {
     XCTAssertEqual(
       expressionIdentifer.value,
       "foobar",
-      "expression.identifer.value not \("foobar"). Got=\(expressionIdentifer.value)")
+      "expressionIdentifer.value not \("foobar"). Got=\(expressionIdentifer.value)")
     XCTAssertEqual(
       expressionIdentifer.tokenLiteral(),
       "foobar",
-      "expression.identifer.tokenLiteral() not \("foobar"). Got=\(expressionIdentifer.tokenLiteral())")
+      "expressionIdentifer.tokenLiteral() not \("foobar"). Got=\(expressionIdentifer.tokenLiteral())")
+  }
+
+
+  func testIntegerLiteral() throws {
+    let input = "5;"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    checkParserErrors(parser)
+
+    XCTAssertEqual(program.statements.count, 1)
+    XCTAssertTrue(
+      program.statements[0] is ExpressionStatement,
+      "statement is not of the type `ExpressionStatement`.")
+
+    let expressionStatement = program.statements[0] as! ExpressionStatement
+    XCTAssertNotNil(expressionStatement.expression)
+
+    XCTAssertTrue(
+      expressionStatement.expression! is IntegerLiteral,
+      "expressionStatement.expression is not of the type `IntegerLiteral`.")
+    let integerLiteral = expressionStatement.expression! as! IntegerLiteral
+
+    XCTAssertEqual(
+      integerLiteral.value,
+      5,
+      "integerLiteral.value not \(5). Got=\(integerLiteral.value)")
+    XCTAssertEqual(
+      integerLiteral.tokenLiteral(),
+      "5",
+      "integerLiteral.tokenLiteral() not \("5"). Got=\(integerLiteral.tokenLiteral())")
   }
 
 

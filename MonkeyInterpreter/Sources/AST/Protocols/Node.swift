@@ -27,6 +27,6 @@ extension Node {
 
 
   public func toString() -> String {
-    return ""
+    return token.literal
   }
 }

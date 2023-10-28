@@ -38,6 +38,7 @@ public class Parser {
     // Register parsing functions for each token type. These functions will be called
     // when we encounter a token of the given type.
     registerPrefix(for: .ident, fn: parseIdentifer)
+    registerPrefix(for: .int, fn: parseIntegerLiteral)
   }
 
 
@@ -145,6 +146,15 @@ public class Parser {
   private func parseIdentifer() -> Expression {
     assert(currentTokenIs(.ident))
     return Identifier(token: self.currentToken, value: self.currentToken.literal)
+  }
+
+
+  private func parseIntegerLiteral() -> Expression {
+    assert(currentTokenIs(.int))
+    guard let intValue = Int(currentToken.literal) else {
+      fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
+    }
+    return IntegerLiteral(token: self.currentToken, value: intValue)
   }
 
 
