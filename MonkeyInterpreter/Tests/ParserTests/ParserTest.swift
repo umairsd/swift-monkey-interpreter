@@ -142,6 +142,40 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testInfixExpressions2() throws {
+    let tests: [(input: String, expected: String)] = [
+      ("-a * b", "((-a) * b)"),
+      ("!-a", "(!(-a))"),
+      ("a + b + c", "((a + b) + c)"),
+      ("a + b - c", "((a + b) - c)"),
+      ("a * b * c", "((a * b) * c)"),
+      ("a * b / c", "((a * b) / c)"),
+      ("a + b / c", "(a + (b / c))"),
+      ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+      ("3 + 4; -5 * 5", """
+                        (3 + 4)
+                        ((-5) * 5)
+                        """),
+      ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+      ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+      ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      let actual = program.toString()
+      XCTAssertEqual(actual, testCase.expected)
+    }
+  }
+
+
+
   // MARK: - Private
 
 
