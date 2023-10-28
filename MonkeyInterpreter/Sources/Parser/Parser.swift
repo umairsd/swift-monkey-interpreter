@@ -9,6 +9,7 @@ import AST
 public typealias PrefixParseFn = () -> Expression?
 public typealias InfixParseFn = (Expression) -> Expression?
 
+
 public class Parser {
 
   /// Pointer to an instance of the lexer, on which we repeatedly call `nextToken` to
@@ -184,14 +185,14 @@ public class Parser {
 
 
   private func currentTokenIs(_ tokenType: TokenType) -> Bool {
-    return currentToken.type == tokenType
+    return currentToken.isType(tokenType)
   }
 
   private func peekTokenIs(_ tokenType: TokenType) -> Bool {
-    guard let peek = peekToken else {
+    guard let peekT = peekToken else {
       return false
     }
-    return peek.type == tokenType
+    return peekT.isType(tokenType)
   }
 
 

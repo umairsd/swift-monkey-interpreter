@@ -10,4 +10,9 @@ public struct Token {
     self.type = type
     self.literal = literal
   }
+
+
+  public func isType(_ tokenType: TokenType) -> Bool {
+    return type == tokenType
+  }
 }
