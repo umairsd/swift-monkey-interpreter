@@ -27,9 +27,7 @@ public class Program: Node {
 
 
   public func toString() -> String {
-    let result = statements.reduce("") { partialResult, stmt in
-      partialResult + stmt.toString() + "\n"
-    }
+    let result = statements.map { $0.toString() }.joined(separator: "\n")
     return result
   }
 }

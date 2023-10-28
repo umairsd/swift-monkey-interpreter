@@ -14,7 +14,7 @@ final class ASTTest: XCTestCase {
       value: Identifier(token: Token(type: .ident, literal: "anotherVar"), value: "anotherVar"))
     let program = Program(statements: [letStmt])
 
-    XCTAssertEqual(program.toString(), "let myVar = anotherVar;\n")
+    XCTAssertEqual(program.toString(), "let myVar = anotherVar;")
   }
 
 
@@ -29,7 +29,12 @@ final class ASTTest: XCTestCase {
       value: Identifier(token: Token(type: .ident, literal: "anotherVar"), value: "anotherVar"))
     let program = Program(statements: [letStmt, returnStmt])
 
-    XCTAssertEqual(program.toString(), "let myVar = anotherVar;\nreturn;\n")
+    XCTAssertEqual(
+      program.toString(),
+      """
+      let myVar = anotherVar;
+      return;
+      """)
   }
 
 }
