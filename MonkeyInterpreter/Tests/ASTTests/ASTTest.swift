@@ -19,7 +19,6 @@ final class ASTTest: XCTestCase {
 
 
   func testToString_returnStatement() {
-    // TODO: Add return expression to the tests for return statement.
     let returnStmt = ReturnStatement(
       token: Token(type: .return, literal: "return"))
 
@@ -37,4 +36,21 @@ final class ASTTest: XCTestCase {
       """)
   }
 
+
+  func testToString_returnStatementWithExpr() {
+    let returnStmt1 = ReturnStatement(
+      token: Token(type: .return, literal: "return 5"))
+
+    let returnStmt2 = ReturnStatement(
+      token: Token(type: .return, literal: "return myVar"))
+
+    let program = Program(statements: [returnStmt1, returnStmt2])
+
+    XCTAssertEqual(
+      program.toString(),
+      """
+      return 5;
+      return myVar;
+      """)
+  }
 }
