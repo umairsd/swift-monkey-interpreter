@@ -13,6 +13,15 @@ final class LexerTest: XCTestCase {
   }
 
 
+  func testNextToken_simpleInteger() throws {
+    let input = "5"
+    let lexer = Lexer(input: input)
+    let token = lexer.nextToken()
+    XCTAssertEqual(token.type, .int)
+    XCTAssertEqual(token.literal, "5")
+  }
+
+
   func testNextToken_basic() throws {
     let input = "=+(){},;"
 

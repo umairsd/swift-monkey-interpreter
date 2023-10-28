@@ -126,7 +126,7 @@ public class Lexer {
   }
 
 
-  /// Reads in an identifier, and advances the lexer's positions until it enounters a non-letter
+  /// Reads in an number, and advances the lexer's positions until it enounters a non-letter
   /// character.
   private func readNumber() -> String? {
     return readCharacters { $0.isNumber }
@@ -155,10 +155,11 @@ public class Lexer {
     if nextPosition >= input.endIndex {
       // Off the deep end!
       currentChar = nil
+      position = nextPosition
       nextReadPosition = nil
     } else {
       currentChar = input[nextPosition]
-      position = nextReadPosition
+      position = nextPosition
       nextReadPosition = input.index(after: nextPosition)
     }
   }
