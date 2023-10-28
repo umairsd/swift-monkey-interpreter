@@ -40,6 +40,8 @@ public class Parser {
     // when we encounter a token of the given type.
     registerPrefix(for: .ident, fn: parseIdentifer)
     registerPrefix(for: .int, fn: parseIntegerLiteral)
+    registerPrefix(for: .bang, fn: parsePrefixExpression)
+    registerPrefix(for: .minus, fn: parsePrefixExpression)
   }
 
 
@@ -96,6 +98,7 @@ public class Parser {
 
   private func parseExpressionWith(precedence: Precedence) -> Expression? {
     guard let prefixFn = prefixParseFunctions[currentToken.type] else {
+      noPrefixParseFnError(currentToken.type)
       return nil
     }
     let leftExp = prefixFn()
@@ -144,13 +147,13 @@ public class Parser {
   }
 
 
-  private func parseIdentifer() -> Expression {
+  private func parseIdentifer() -> Expression? {
     assert(currentTokenIs(.ident))
     return Identifier(token: self.currentToken, value: self.currentToken.literal)
   }
 
 
-  private func parseIntegerLiteral() -> Expression {
+  private func parseIntegerLiteral() -> Expression? {
     assert(currentTokenIs(.int))
     guard let intValue = Int(currentToken.literal) else {
       fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
@@ -159,7 +162,29 @@ public class Parser {
   }
 
 
+  private func parsePrefixExpression() -> Expression? {
+    assert(currentTokenIs(.bang) || currentTokenIs(.minus))
+
+    let token = currentToken
+    let prefixOperator = currentToken.literal
+
+    moveToNextToken()
+
+    guard let rightExpression = parseExpressionWith(precedence: .prefix) else {
+      errors.append("Unable to parse the right expression for the Prefix Expression.")
+      return nil
+    }
+
+    let expr = PrefixExpression(
+      token: token,
+      prefixOperator: prefixOperator,
+      rightExpression: rightExpression)
+    return expr
+  }
+
+
   // MARK: - Private (Helpers)
+
 
   /// Helper function that advances both the token pointers.
   private func moveToNextToken() {
@@ -196,9 +221,15 @@ public class Parser {
   }
 
 
+  private func noPrefixParseFnError(_ tokenType: TokenType) {
+    let msg = "No prefix parse function for \(tokenType) found."
+    errors.append(msg)
+  }
+
+
   private func peekError(_ tokenType: TokenType) {
     let peekTokenString = peekToken == nil ? "nil" : "\(peekToken!.type)"
-    let message = "expected next token to be \(tokenType), got \(peekTokenString) instead."
+    let message = "Expected next token to be \(tokenType), got \(peekTokenString) instead."
     errors.append(message)
   }
 }

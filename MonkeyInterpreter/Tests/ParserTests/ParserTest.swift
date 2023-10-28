@@ -120,23 +120,75 @@ final class ParserTest: XCTestCase {
     let expressionStatement = program.statements[0] as! ExpressionStatement
     XCTAssertNotNil(expressionStatement.expression)
 
-    XCTAssertTrue(
-      expressionStatement.expression! is IntegerLiteral,
-      "expressionStatement.expression is not of the type `IntegerLiteral`.")
-    let integerLiteral = expressionStatement.expression! as! IntegerLiteral
+    try validateIntegerLiteral(expressionStatement.expression!, expectedValue: 5)
+  }
 
-    XCTAssertEqual(
-      integerLiteral.value,
-      5,
-      "integerLiteral.value not \(5). Got=\(integerLiteral.value)")
-    XCTAssertEqual(
-      integerLiteral.tokenLiteral(),
-      "5",
-      "integerLiteral.tokenLiteral() not \("5"). Got=\(integerLiteral.tokenLiteral())")
+
+  func testPrefixExpression() throws {
+    try validatePrefixExpression("!5", expectedOperator: "!", integerValue: 5)
+    try validatePrefixExpression("-27", expectedOperator: "-", integerValue: 27)
   }
 
 
   // MARK: - Private
+
+
+  private func validatePrefixExpression(
+    _ input: String,
+    expectedOperator:
+    String, integerValue: Int
+  ) throws {
+
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+    XCTAssertTrue(
+      program.statements[0] is ExpressionStatement,
+      "statement is not of the type `ExpressionStatement`.")
+
+    let expressionStatement = program.statements[0] as! ExpressionStatement
+    XCTAssertNotNil(expressionStatement.expression)
+
+    XCTAssertTrue(
+      expressionStatement.expression! is PrefixExpression,
+      "expressionStatement.expression is not of the type `PrefixExpression`.")
+    let prefixExpression = expressionStatement.expression! as! PrefixExpression
+
+    XCTAssertEqual(
+      prefixExpression.prefixOperator,
+      expectedOperator,
+      "prefixExpression.operator not \(expectedOperator). Got=\(prefixExpression.prefixOperator)")
+
+    try validateIntegerLiteral(prefixExpression.rightExpression, expectedValue: integerValue)
+  }
+
+
+  private func validateIntegerLiteral(_ expression: Expression, expectedValue: Int) throws {
+    XCTAssertTrue(
+      expression is IntegerLiteral,
+      "expression is not of the type `IntegerLiteral`.")
+    let integerLiteral = expression as! IntegerLiteral
+
+    XCTAssertEqual(
+      integerLiteral.value,
+      expectedValue,
+      "integerLiteral.value not \(expectedValue). Got=\(integerLiteral.value)")
+    XCTAssertEqual(
+      integerLiteral.tokenLiteral(),
+      "\(expectedValue)",
+      "integerLiteral.tokenLiteral() not \(expectedValue). Got=\(integerLiteral.tokenLiteral())")
+  }
+
 
   private func validateLetStatement(_ statement: Statement, identifier name: String) throws {
     XCTAssertEqual(
@@ -161,10 +213,13 @@ final class ParserTest: XCTestCase {
   }
 
 
-  private func checkParserErrors(_ parser: Parser) {
+  @discardableResult
+  private func checkParserErrors(_ parser: Parser) -> Bool {
     if parser.errors.count > 0 {
       print("Parser has \(parser.errors.count) errors.")
       parser.errors.forEach { print($0) }
+      return true
     }
+    return false
   }
 }
