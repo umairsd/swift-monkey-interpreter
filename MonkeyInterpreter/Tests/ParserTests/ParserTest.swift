@@ -66,6 +66,41 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testIdentifierExpression() throws {
+    let input = "foobar;"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    checkParserErrors(parser)
+
+    XCTAssertEqual(program.statements.count, 1)
+    XCTAssertTrue(
+      program.statements[0] is ExpressionStatement,
+      "statement is not of the type `ExpressionStatement`.")
+
+    let expressionStatement = program.statements[0] as! ExpressionStatement
+    XCTAssertNotNil(expressionStatement.expression)
+
+    XCTAssertTrue(
+      expressionStatement.expression! is Identifier,
+      "expressionStatement.expression is not of the type `Identifier`.")
+    let expressionIdentifer = expressionStatement.expression! as! Identifier
+
+    XCTAssertEqual(
+      expressionIdentifer.value,
+      "foobar",
+      "expression.identifer.value not \("foobar"). Got=\(expressionIdentifer.value)")
+    XCTAssertEqual(
+      expressionIdentifer.tokenLiteral(),
+      "foobar",
+      "expression.identifer.tokenLiteral() not \("foobar"). Got=\(expressionIdentifer.tokenLiteral())")
+  }
+
+
   // MARK: - Private
 
   private func validateLetStatement(_ statement: Statement, identifier name: String) throws {

@@ -5,6 +5,10 @@ import Lexer
 import Token
 import AST
 
+// TODO: Explore changing such that these functions accept the `Token` type.
+public typealias PrefixParseFn = () -> Expression?
+public typealias InfixParseFn = (Expression) -> Expression?
+
 public class Parser {
 
   /// Pointer to an instance of the lexer, on which we repeatedly call `nextToken` to
@@ -15,8 +19,13 @@ public class Parser {
   /// The next token in the lexer. Used if `currentToken` doesn't give us enough
   /// information for a parsing decision.
   private var peekToken: Token?
-
+  /// A list of errors generated during parsing.
   public private(set) var errors: [String] = []
+
+  /// Map of token type to the function that that parses that function (Prefix).
+  private var prefixParseFunctions: [TokenType: PrefixParseFn] = [:]
+  /// Map of token type to the function that that parses that function (Infix).
+  private var infixParseFunctions: [TokenType: InfixParseFn] = [:]
 
 
   public init(lexer: Lexer) {
@@ -25,7 +34,13 @@ public class Parser {
     // Read two tokens so that the `currentToken` and `nextToken` are both set.
     currentToken = lexer.nextToken()
     peekToken = lexer.nextToken()
+
+    // Register parsing functions for each token type. These functions will be called
+    // when we encounter a token of the given type.
+    registerPrefix(for: .ident, fn: parseIdentifer)
   }
+
+
 
   // MARK: - Public
 
@@ -39,6 +54,16 @@ public class Parser {
     return program
   }
 
+
+  public func registerPrefix(for tokenType: TokenType, fn: @escaping PrefixParseFn) {
+    prefixParseFunctions[tokenType] = fn
+  }
+
+  public func registerInfix(for tokenType: TokenType, fn: @escaping InfixParseFn) {
+    infixParseFunctions[tokenType] = fn
+  }
+
+
   // MARK: - Private (Parse)
 
   /// Parses a `Statement` based on the type of the current token.
@@ -49,13 +74,35 @@ public class Parser {
     case .return:
       parseReturnStatement()
     default:
-      nil
+      parseExpressionStatement()
     }
   }
 
 
+  /// Parses an `ExpressionStatement` starting from the current token.
+  private func parseExpressionStatement() -> ExpressionStatement? {
+    let stmt = ExpressionStatement(
+      token: currentToken,
+      expression: parseExpressionWith(precedence: .lowest))
+
+    if peekTokenIs(.semicolon) {
+      moveToNextToken()
+    }
+    return stmt
+  }
+
+
+  private func parseExpressionWith(precedence: Precedence) -> Expression? {
+    guard let prefixFn = prefixParseFunctions[currentToken.type] else {
+      return nil
+    }
+    let leftExp = prefixFn()
+    return leftExp
+  }
+
+
   /// Parses a `LetStatement` starting from the current token.
-  private func parseLetStatement() -> Statement? {
+  private func parseLetStatement() -> LetStatement? {
     assert(currentToken.type == .let)
 
     let t = currentToken
@@ -79,7 +126,7 @@ public class Parser {
 
 
   /// Parses a return statement starting from the current token.
-  private func parseReturnStatement() -> Statement? {
+  private func parseReturnStatement() -> ReturnStatement? {
     assert(currentToken.type == .return)
 
     let t = currentToken
@@ -92,6 +139,12 @@ public class Parser {
 
     let stmt = ReturnStatement(token: t)
     return stmt
+  }
+
+
+  private func parseIdentifer() -> Expression {
+    assert(currentTokenIs(.ident))
+    return Identifier(token: self.currentToken, value: self.currentToken.literal)
   }
 
 
