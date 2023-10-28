@@ -45,6 +45,8 @@ public class Parser {
     registerPrefix(for: .int, fn: parseIntegerLiteral)
     registerPrefix(for: .bang, fn: parsePrefixExpression)
     registerPrefix(for: .minus, fn: parsePrefixExpression)
+    registerPrefix(for: .true, fn: parseBoolean)
+    registerPrefix(for: .false, fn: parseBoolean)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -232,6 +234,12 @@ public class Parser {
       infixOperator: infixOperator,
       rightExpression: right)
     return expr
+  }
+
+
+  private func parseBoolean() -> Expression? {
+    assert(currentTokenIs(.true) || currentTokenIs(.false))
+    return Boolean(token: currentToken, value: currentTokenIs(.true))
   }
 
 

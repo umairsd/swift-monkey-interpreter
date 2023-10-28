@@ -176,6 +176,48 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testBoolean() throws {
+    let tests: [(input: String, expectedValue: Bool)] = [
+      ("true", true),
+      ("false", false)
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      if checkParserErrors(parser) {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+
+      XCTAssertEqual(program.statements.count, 1)
+      XCTAssertTrue(
+        program.statements[0] is ExpressionStatement,
+        "statement is not of the type `ExpressionStatement`.")
+
+      let expressionStatement = program.statements[0] as! ExpressionStatement
+      XCTAssertNotNil(expressionStatement.expression)
+
+      XCTAssertTrue(
+        expressionStatement.expression! is Boolean,
+        "expressionStatement.expression is not of the type `Boolean`.")
+      let boolean = expressionStatement.expression! as! Boolean
+
+      XCTAssertEqual(
+        boolean.value,
+        testCase.expectedValue,
+        "boolean.value not \(testCase.expectedValue). Got=\(boolean.value)")
+    }
+  }
+
+
+  // MARK: - Stringly Tests
+
   func testInfixExpressions_Stringly() throws {
     let tests: [(input: String, expected: String)] = [
       ("-a * b", "((-a) * b)"),
@@ -207,7 +249,27 @@ final class ParserTest: XCTestCase {
       XCTAssertEqual(actual, testCase.expected)
     }
   }
+  
 
+  func testOperatorPrecedenceParsing() throws {
+    let tests: [(input: String, expected: String)] = [
+      ("true", "true"),
+      ("false", "false"),
+      ("3 > 5 == false", "((3 > 5) == false)"),
+      ("3 < 5 == true", "((3 < 5) == true)"),
+    ]
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      let actual = program.toString()
+      XCTAssertEqual(actual, testCase.expected)
+    }
+  }
 
 
   // MARK: - Private
