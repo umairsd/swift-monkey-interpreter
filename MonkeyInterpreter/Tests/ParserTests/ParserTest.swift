@@ -302,6 +302,61 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testIfElseExpression() throws {
+    let input = "if (x < y) { x } else { y }"
+
+
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+    guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
+      XCTFail("expressionStatement is nil.")
+      return
+    }
+
+    XCTAssertTrue(
+      program.statements[0] is ExpressionStatement,
+      "statement is not of the type `ExpressionStatement`.")
+
+    guard let ifExpr =  expressionStatement.expression as? IfExpression else {
+      XCTFail("expressionStatement.expression is not of the type `IfExpression`.")
+      return
+    }
+
+    try validateInfixExpression(ifExpr.condition, leftValue: "x", operator: "<", rightValue: "y")
+
+    XCTAssertEqual(ifExpr.consequence.statements.count, 1)
+
+    guard let consequenceStmt = ifExpr.consequence.statements[0] as? ExpressionStatement,
+          let consequenceExpr = consequenceStmt.expression
+    else {
+      XCTFail("consequence.statements[0] is not `ExpressionStatement`.")
+      return
+    }
+
+    try validateIdentifier(consequenceExpr, expectedValue: "x")
+
+    guard let alternativeStmt = ifExpr.alternative?.statements[0] as? ExpressionStatement,
+          let alternativeExpr = alternativeStmt.expression
+    else {
+      XCTFail("alternative.statements[0] is not `ExpressionStatement`.")
+      return
+    }
+
+    try validateIdentifier(alternativeExpr, expectedValue: "y")
+  }
+
+
   // MARK: - Stringly Tests
 
   func testInfixExpressions_Stringly() throws {

@@ -178,17 +178,35 @@ public class Parser {
       errors.append("IfExpression: Didn't find the opening `{` for the consequence block.")
       return nil
     }
-    
 
     guard let consequence = parseBlockStatement() else {
       errors.append("IfExpression: Unable to parse the `BlockStatement` for the consequence block.")
       return nil
     }
 
-    // TODO: Parse "else".
+    if peekTokenIs(.else) {
+      moveToNextToken()
+      guard expectPeekAndContinue(.lBrace) else {
+        errors.append("IfExpression: Didn't find the opening `{` for the alternative block.")
+        return nil
+      }
 
-    let ifExpr = IfExpression(token: token, condition: condition, consequence: consequence)
-    return ifExpr
+      guard let alt = parseBlockStatement() else {
+        errors.append("IfExpression: Unable to parse the `BlockStatement` for the alternative block.")
+        return nil
+      }
+
+      let ifElseExpr = IfExpression(
+        token: token,
+        condition: condition,
+        consequence: consequence,
+        alternative: alt)
+      return ifElseExpr
+
+    } else {
+      let ifExpr = IfExpression(token: token, condition: condition, consequence: consequence)
+      return ifExpr
+    }
   }
 
 
