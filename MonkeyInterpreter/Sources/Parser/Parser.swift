@@ -48,6 +48,7 @@ public class Parser {
     registerPrefix(for: .true, fn: parseBoolean)
     registerPrefix(for: .false, fn: parseBoolean)
     registerPrefix(for: .lParen, fn: parseGroupedExpression)
+    registerPrefix(for: .if, fn: parseIfExpression)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -137,7 +138,9 @@ public class Parser {
 
   /// Parse grouped expressions, i.e. expressions grouped by parenthesis.
   private func parseGroupedExpression() -> Expression? {
-    assert(currentTokenIs(.lParen))
+    guard currentTokenIs(.lParen) else {
+      return nil
+    }
 
     moveToNextToken()
     let expr = parseExpression(withPrecedence: .lowest)
@@ -145,14 +148,76 @@ public class Parser {
     guard expectPeekAndContinue(.rParen) else {
       return nil
     }
-
     return expr
   }
 
 
+  private func parseIfExpression() -> Expression? {
+    guard currentTokenIs(.if) else { return nil }
+
+    let token = currentToken // the `if`.
+
+    // After this call, currentToken is "(".
+    guard expectPeekAndContinue(.lParen) else { return nil }
+
+    // After this call, currentToken is the first character of the condition.
+    moveToNextToken()
+
+    guard let condition = parseExpression(withPrecedence: .lowest) else {
+      errors.append("IfExpression: Unable to parse the condition.")
+      return nil
+    }
+
+    // After this call, the currentToken is the ) of the condition.
+    guard expectPeekAndContinue(.rParen) else {
+      errors.append("IfExpression: Didn't find the closing `)` for the condition.")
+      return nil
+    }
+    // After this call, the currentToken is the { of the consequence block.
+    guard expectPeekAndContinue(.lBrace) else {
+      errors.append("IfExpression: Didn't find the opening `{` for the consequence block.")
+      return nil
+    }
+    
+
+    guard let consequence = parseBlockStatement() else {
+      errors.append("IfExpression: Unable to parse the `BlockStatement` for the consequence block.")
+      return nil
+    }
+
+    // TODO: Parse "else".
+
+    let ifExpr = IfExpression(token: token, condition: condition, consequence: consequence)
+    return ifExpr
+  }
+
+
+  private func parseBlockStatement() -> BlockStatement? {
+    guard currentTokenIs(.lBrace) else {
+      return nil
+    }
+
+    let t = currentToken // Points to "{"
+    var statements: [Statement] = []
+
+    moveToNextToken()
+
+    while !currentTokenIs(.rBrace) && !currentTokenIs(.eof) {
+      if let stmt = parseStatement() {
+        statements.append(stmt)
+      }
+      moveToNextToken()
+    }
+
+    let blockStmt = BlockStatement(token: t, statements: statements)
+    return blockStmt
+  }
+
+
+
   /// Parses a `LetStatement` starting from the current token.
   private func parseLetStatement() -> LetStatement? {
-    assert(currentToken.type == .let)
+    guard currentTokenIs(.let) else { return nil }
 
     let t = currentToken
 
@@ -273,7 +338,8 @@ public class Parser {
 
 
   /// Validates that the `peekToken` is of the expected type. If so, it increments the two
-  /// tokens and returns true. If the `peekToken`
+  /// tokens and returns `true`. If the `peekToken` is not of the expected type, log an error
+  /// and return `false`.
   private func expectPeekAndContinue(_ tokenType: TokenType) -> Bool {
     if peekTokenIs(tokenType) {
       moveToNextToken()
@@ -328,8 +394,8 @@ public class Parser {
 
 
   private func peekError(_ tokenType: TokenType) {
-    let peekTokenString = peekToken == nil ? "nil" : "\(peekToken!.type)"
-    let message = "Expected next token to be \(tokenType), got \(peekTokenString) instead."
+    let s = peekToken == nil ? "nil" : "\(peekToken!.type)"
+    let message = "peekError: Expected next token to be \(tokenType), got \(s) instead."
     errors.append(message)
   }
 }
