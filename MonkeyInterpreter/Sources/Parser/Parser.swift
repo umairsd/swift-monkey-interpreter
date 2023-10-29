@@ -47,6 +47,7 @@ public class Parser {
     registerPrefix(for: .minus, fn: parsePrefixExpression)
     registerPrefix(for: .true, fn: parseBoolean)
     registerPrefix(for: .false, fn: parseBoolean)
+    registerPrefix(for: .lParen, fn: parseGroupedExpression)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -111,7 +112,7 @@ public class Parser {
 
 
   /// Parses an expression with a given precedence (defaults to `.lowest`).
-  private func parseExpression(withPrecedence p: Precedence = .lowest) -> Expression? {
+  private func parseExpression(withPrecedence p: Precedence) -> Expression? {
     guard let prefixFn = prefixParseFn(for: currentToken) else {
       noPrefixParseFnError(currentToken.type)
       return nil
@@ -131,6 +132,21 @@ public class Parser {
       leftExp = infixFn(leftExp)
     }
     return leftExp
+  }
+
+
+  /// Parse grouped expressions, i.e. expressions grouped by parenthesis.
+  private func parseGroupedExpression() -> Expression? {
+    assert(currentTokenIs(.lParen))
+
+    moveToNextToken()
+    let expr = parseExpression(withPrecedence: .lowest)
+
+    guard expectPeekAndContinue(.rParen) else {
+      return nil
+    }
+
+    return expr
   }
 
 
