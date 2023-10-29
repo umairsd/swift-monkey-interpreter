@@ -69,7 +69,7 @@ public class Parser {
 
     while currentToken.type != .eof, let statement = parseStatement() {
       program.appendStatement(statement)
-      moveToNextToken()
+      incrementTokens()
     }
     return program
   }
@@ -106,7 +106,7 @@ public class Parser {
       expression: parseExpression(withPrecedence: .lowest))
 
     if peekTokenIs(.semicolon) {
-      moveToNextToken()
+      incrementTokens()
     }
     return stmt
   }
@@ -129,7 +129,7 @@ public class Parser {
         return leftExp
       }
 
-      moveToNextToken()
+      incrementTokens()
       leftExp = infixFn(leftExp)
     }
     return leftExp
@@ -142,10 +142,10 @@ public class Parser {
       return nil
     }
 
-    moveToNextToken()
+    incrementTokens()
     let expr = parseExpression(withPrecedence: .lowest)
 
-    guard expectPeekAndContinue(.rParen) else {
+    guard expectPeekAndIncrement(.rParen) else {
       return nil
     }
     return expr
@@ -158,10 +158,10 @@ public class Parser {
     let token = currentToken // the `if`.
 
     // After this call, currentToken is "(".
-    guard expectPeekAndContinue(.lParen) else { return nil }
+    guard expectPeekAndIncrement(.lParen) else { return nil }
 
     // After this call, currentToken is the first character of the condition.
-    moveToNextToken()
+    incrementTokens()
 
     guard let condition = parseExpression(withPrecedence: .lowest) else {
       errors.append("IfExpression: Unable to parse the condition.")
@@ -169,12 +169,12 @@ public class Parser {
     }
 
     // After this call, the currentToken is the ) of the condition.
-    guard expectPeekAndContinue(.rParen) else {
+    guard expectPeekAndIncrement(.rParen) else {
       errors.append("IfExpression: Didn't find the closing `)` for the condition.")
       return nil
     }
     // After this call, the currentToken is the { of the consequence block.
-    guard expectPeekAndContinue(.lBrace) else {
+    guard expectPeekAndIncrement(.lBrace) else {
       errors.append("IfExpression: Didn't find the opening `{` for the consequence block.")
       return nil
     }
@@ -185,8 +185,8 @@ public class Parser {
     }
 
     if peekTokenIs(.else) {
-      moveToNextToken()
-      guard expectPeekAndContinue(.lBrace) else {
+      incrementTokens()
+      guard expectPeekAndIncrement(.lBrace) else {
         errors.append("IfExpression: Didn't find the opening `{` for the alternative block.")
         return nil
       }
@@ -218,13 +218,13 @@ public class Parser {
     let t = currentToken // Points to "{"
     var statements: [Statement] = []
 
-    moveToNextToken()
+    incrementTokens()
 
     while !currentTokenIs(.rBrace) && !currentTokenIs(.eof) {
       if let stmt = parseStatement() {
         statements.append(stmt)
       }
-      moveToNextToken()
+      incrementTokens()
     }
 
     let blockStmt = BlockStatement(token: t, statements: statements)
@@ -240,16 +240,16 @@ public class Parser {
     let t = currentToken
 
     // Parse the name.
-    guard expectPeekAndContinue(.ident) else { return nil }
+    guard expectPeekAndIncrement(.ident) else { return nil }
     let nameIdentifier = Identifier(token: currentToken, value: currentToken.literal)
 
     // Parse the assignment operator.
-    guard expectPeekAndContinue(.assign) else { return nil }
+    guard expectPeekAndIncrement(.assign) else { return nil }
 
     // Parse the assignment expression.
     // TODO: We're skipping the "expression" part for now.
     while !currentTokenIs(.semicolon) {
-      moveToNextToken()
+      incrementTokens()
     }
 
     let stmt = LetStatement(token: t, name: nameIdentifier)
@@ -266,7 +266,7 @@ public class Parser {
     // Parse the expression to be returned
     // TODO: We're skipping the "expression" part for now.
     while !currentTokenIs(.semicolon) {
-      moveToNextToken()
+      incrementTokens()
     }
 
     let stmt = ReturnStatement(token: t)
@@ -296,7 +296,7 @@ public class Parser {
     let token = currentToken
     let prefixOperator = currentToken.literal
 
-    moveToNextToken()
+    incrementTokens()
 
     guard let rightExpression = parseExpression(withPrecedence: .prefix) else {
       errors.append("Unable to parse the right expression for the Prefix Expression.")
@@ -320,7 +320,7 @@ public class Parser {
     let infixOperator = currentToken.literal
     let precedence = currentPrecedence()
 
-    moveToNextToken()
+    incrementTokens()
 
     guard let right = parseExpression(withPrecedence: precedence) else {
       errors.append("Unable to parse the right expression for the Infix Expression.")
@@ -346,9 +346,9 @@ public class Parser {
 
 
   /// Helper function that advances both the token pointers.
-  private func moveToNextToken() {
+  private func incrementTokens() {
     guard let pT = peekToken else {
-      fatalError()
+      fatalError("Invoked incrementToken when `peekToken` is nil.")
     }
     currentToken = pT
     peekToken = lexer.nextToken()
@@ -358,9 +358,9 @@ public class Parser {
   /// Validates that the `peekToken` is of the expected type. If so, it increments the two
   /// tokens and returns `true`. If the `peekToken` is not of the expected type, log an error
   /// and return `false`.
-  private func expectPeekAndContinue(_ tokenType: TokenType) -> Bool {
+  private func expectPeekAndIncrement(_ tokenType: TokenType) -> Bool {
     if peekTokenIs(tokenType) {
-      moveToNextToken()
+      incrementTokens()
       return true
     } else {
       peekError(tokenType)
