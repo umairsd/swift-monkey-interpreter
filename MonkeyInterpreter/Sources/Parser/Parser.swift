@@ -5,7 +5,7 @@ import Lexer
 import Token
 import AST
 
-// TODO: Explore changing such that these functions accept the `Token` type.
+
 public typealias PrefixParseFn = () -> Expression?
 public typealias InfixParseFn = (Expression?) -> Expression?
 
@@ -311,13 +311,18 @@ public class Parser {
     // Parse the assignment operator.
     guard expectPeekAndIncrement(.assign) else { return nil }
 
-    // Parse the assignment expression.
-    // TODO: We're skipping the "expression" part for now.
-    while !currentTokenIs(.semicolon) {
+    incrementTokens()
+
+    guard let expr = parseExpression(withPrecedence: .lowest) else {
+      errors.append("\(#function): Unable to parse the expression.")
+      return nil
+    }
+
+    if peekTokenIs(.semicolon) {
       incrementTokens()
     }
 
-    let stmt = LetStatement(token: t, name: nameIdentifier)
+    let stmt = LetStatement(token: t, name: nameIdentifier, value: expr)
     return stmt
   }
 

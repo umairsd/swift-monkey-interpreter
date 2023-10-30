@@ -8,28 +8,35 @@ import AST
 final class ParserTest: XCTestCase {
 
   func testLetStatement() throws {
-    let input = """
-    let x = 5;
-    let y = 10;
-    let foobar = 838383;
-    """
+    let tests: [(input: String, expectedIdentifier: String, expectedValue: Any)] = [
+      ("let x = 5;", "x", 5),
+      ("let z = true;", "z", true),
+      ("let foobar = bar;", "foobar", "bar"),
+    ]
 
-    let lexer = Lexer(input: input)
-    let parser = Parser(lexer: lexer)
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
 
-    guard let program = parser.parseProgram() else {
-      XCTFail("`parseProgram()` failed to parse the input.")
-      return
-    }
-    checkParserErrors(parser)
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      if checkParserErrors(parser) {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
 
-    let expectedIdentifiers = ["x", "y", "foobar"]
-    XCTAssertEqual(program.statements.count, 3)
+      XCTAssertEqual(program.statements.count, 1)
 
-    for (i, statement) in program.statements.enumerated() {
-      let expectedIdentifierName = expectedIdentifiers[i]
+      guard let letStmt = program.statements.first as? LetStatement else {
+        XCTFail("statement is not of type `LetStatement`")
+        return
+      }
 
-      try validateLetStatement(statement, identifier: expectedIdentifierName)
+      try validateLetStatement(letStmt, identifier: testCase.expectedIdentifier)
+
+      try validateLiteralExpression(letStmt.value, expected: testCase.expectedValue)
     }
   }
 

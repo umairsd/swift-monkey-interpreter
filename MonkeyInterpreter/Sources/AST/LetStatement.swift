@@ -8,11 +8,10 @@ public class LetStatement: Statement {
   /// The name of the variable in a let statement.
   public let name: Identifier
   /// The expression to the right of the equal sign.
-  // TODO: Make this non-optional.
-  public let value: Expression?
+  public let value: Expression
 
 
-  public init(token: Token, name: Identifier, value: Expression? = nil) {
+  public init(token: Token, name: Identifier, value: Expression) {
     self.token = token
     self.name = name
     self.value = value
@@ -25,9 +24,7 @@ public class LetStatement: Statement {
 
   public func toString() -> String {
     var result = "\(tokenLiteral()) \(name.toString()) = "
-    if let v = value {
-      result += v.toString()
-    }
+    result += value.toString()
     result += ";"
     return result
   }
