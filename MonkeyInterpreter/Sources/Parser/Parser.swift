@@ -256,20 +256,6 @@ public class Parser {
 
     let parameters = parseFunctionParameters()
 
-
-//    incrementTokens()
-//
-//    var parameters: [Identifier] = []
-//    while !currentTokenIs(.rParen) && !currentTokenIs(.eof) {
-//      if let p = parseIdentifer() {
-//        paramters.append(p)
-//      }
-//      incrementTokens()
-//      if currentTokenIs(.comma) {
-//        incrementTokens()
-//      }
-//    }
-
     guard expectPeekAndIncrement(.lBrace) else {
       errors.append("parseFunctionLiteral: Didn't find the opening `{` for the function's body.")
       return nil
