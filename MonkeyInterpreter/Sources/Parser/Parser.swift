@@ -335,15 +335,20 @@ public class Parser {
     }
 
     let t = currentToken
-
-    // Parse the expression to be returned
-    // TODO: We're skipping the "expression" part for now.
-    while !currentTokenIs(.semicolon) {
+    if peekTokenIs(.semicolon) {
       incrementTokens()
-    }
+      return ReturnStatement(token: t)
+    } else {
+      incrementTokens()
+      let returnValue = parseExpression(withPrecedence: .lowest)
 
-    let stmt = ReturnStatement(token: t)
-    return stmt
+      if peekTokenIs(.semicolon) {
+        incrementTokens()
+      }
+
+      let stmt = ReturnStatement(token: t, returnValue: returnValue)
+      return stmt
+    }
   }
 
 

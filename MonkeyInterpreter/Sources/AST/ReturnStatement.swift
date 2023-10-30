@@ -5,8 +5,7 @@ import Token
 
 public class ReturnStatement: Statement {
 
-  /// The expression to be returned.
-  // TODO: Make this non-optional.
+  /// The expression to be returned. It could be nil if its a simple `return` statement.
   public let returnValue: Expression?
 
   public init(token: Token, returnValue: Expression? = nil) {

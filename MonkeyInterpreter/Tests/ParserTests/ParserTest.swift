@@ -42,36 +42,45 @@ final class ParserTest: XCTestCase {
 
 
   func testReturnStatement() throws {
-    let input = """
-    return 5;
-    return 10;
-    return 838383;
-    """
+    let tests: [(input: String, expectedValue: Any?)] = [
+      ("return;", nil),
+      ("return 5;", 5),
+      ("return tin;", "tin"),
+      ("return false;", false)
+    ]
 
-    let lexer = Lexer(input: input)
-    let parser = Parser(lexer: lexer)
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
 
-    guard let program = parser.parseProgram() else {
-      XCTFail("`parseProgram()` failed to parse the input.")
-      return
-    }
-    if checkParserErrors(parser) {
-      XCTFail("Test failed due to preceding parser errors.")
-      return
-    }
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      if checkParserErrors(parser) {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
 
-    XCTAssertEqual(program.statements.count, 3)
+      XCTAssertEqual(program.statements.count, 1)
 
-    for statement in program.statements {
+      guard let returnStmt = program.statements.first as? ReturnStatement else {
+        XCTFail("statement is not of type `ReturnStatement`")
+        return
+      }
+
       XCTAssertEqual(
-        statement.tokenLiteral(),
+        returnStmt.tokenLiteral(),
         "return",
-        "statement.tokenLiteral() not `return`. Got=\(statement.tokenLiteral())")
+        "statement.tokenLiteral() not `return`. Got=\(returnStmt.tokenLiteral())")
 
-      XCTAssertTrue(statement is ReturnStatement, "statement is not of the type `ReturnStatement`.")
-
-      // let returnStatement = statement as! ReturnStatement
-      // TODO: Validate the "return expression"
+      if let expectedValue = testCase.expectedValue, let actualValue = returnStmt.returnValue {
+        try validateLiteralExpression(actualValue, expected: expectedValue)
+      } else if let actualValue = returnStmt.returnValue {
+        XCTFail("Got a return value of \(actualValue.toString()), even though nil expected.")
+      } else {
+        XCTAssertNil(returnStmt.returnValue, "returnValue must be nil.")
+      }
     }
   }
 
