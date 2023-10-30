@@ -304,8 +304,6 @@ final class ParserTest: XCTestCase {
 
   func testIfElseExpression() throws {
     let input = "if (x < y) { x } else { y }"
-
-
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
 
@@ -313,7 +311,7 @@ final class ParserTest: XCTestCase {
       XCTFail("`parseProgram()` failed to parse the input.")
       return
     }
-    if checkParserErrors(parser) {
+    guard !checkParserErrors(parser) else {
       XCTFail("Test failed due to preceding parser errors.")
       return
     }

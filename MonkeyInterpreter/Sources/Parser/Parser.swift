@@ -139,6 +139,7 @@ public class Parser {
   /// Parse grouped expressions, i.e. expressions grouped by parenthesis.
   private func parseGroupedExpression() -> Expression? {
     guard currentTokenIs(.lParen) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
     }
 
@@ -152,8 +153,12 @@ public class Parser {
   }
 
 
+  /// Parses an `IfExpression` starting from the current token.
   private func parseIfExpression() -> Expression? {
-    guard currentTokenIs(.if) else { return nil }
+    guard currentTokenIs(.if) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
 
     let token = currentToken // the `if`.
 
@@ -210,8 +215,10 @@ public class Parser {
   }
 
 
+  /// Parses a `BlockStatement` starting from the current token.
   private func parseBlockStatement() -> BlockStatement? {
     guard currentTokenIs(.lBrace) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
     }
 
@@ -235,7 +242,10 @@ public class Parser {
 
   /// Parses a `LetStatement` starting from the current token.
   private func parseLetStatement() -> LetStatement? {
-    guard currentTokenIs(.let) else { return nil }
+    guard currentTokenIs(.let) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
 
     let t = currentToken
 
@@ -257,9 +267,12 @@ public class Parser {
   }
 
 
-  /// Parses a return statement starting from the current token.
+  /// Parses a `ReturnStatement` starting from the current token.
   private func parseReturnStatement() -> ReturnStatement? {
-    assert(currentToken.type == .return)
+    guard currentTokenIs(.return) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
 
     let t = currentToken
 
@@ -274,14 +287,22 @@ public class Parser {
   }
 
 
-  private func parseIdentifer() -> Expression? {
-    assert(currentTokenIs(.ident))
+  /// Parses an `Identifer` starting from the current token.
+  private func parseIdentifer() -> Identifier? {
+    guard currentTokenIs(.ident) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
     return Identifier(token: self.currentToken, value: self.currentToken.literal)
   }
 
 
-  private func parseIntegerLiteral() -> Expression? {
-    assert(currentTokenIs(.int))
+  /// Parses an `IntegerLiteral` starting from the current token.
+  private func parseIntegerLiteral() -> IntegerLiteral? {
+    guard currentTokenIs(.int) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
     guard let intValue = Int(currentToken.literal) else {
       fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
     }
@@ -289,9 +310,12 @@ public class Parser {
   }
 
 
-  /// Parses a prefix expression.
-  private func parsePrefixExpression() -> Expression? {
-    assert(currentTokenIs(.bang) || currentTokenIs(.minus))
+  /// Parses a `PrefixExpression` starting from the current token.
+  private func parsePrefixExpression() -> PrefixExpression? {
+    guard currentTokenIs(.bang) || currentTokenIs(.minus) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
 
     let token = currentToken
     let prefixOperator = currentToken.literal
@@ -311,8 +335,8 @@ public class Parser {
   }
 
 
-  /// Parses an infix expression.
-  private func parseInfixExpression(left: Expression?) -> Expression? {
+  /// Parses an `InfixExpression` starting from the current token.
+  private func parseInfixExpression(left: Expression?) -> InfixExpression? {
     guard let leftExpr = left else {
       return nil
     }
@@ -336,8 +360,12 @@ public class Parser {
   }
 
 
-  private func parseBoolean() -> Expression? {
-    assert(currentTokenIs(.true) || currentTokenIs(.false))
+  /// Parses a `Boolean` starting from the current token.
+  private func parseBoolean() -> Boolean? {
+    guard currentTokenIs(.true) || currentTokenIs(.false) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
     return Boolean(token: currentToken, value: currentTokenIs(.true))
   }
 
