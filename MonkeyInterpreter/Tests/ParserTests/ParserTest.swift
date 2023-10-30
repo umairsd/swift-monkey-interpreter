@@ -435,6 +435,91 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testCallExpression() throws {
+    struct BodyStmt {
+      let leftValue: Any
+      let expectedOperator: String
+      let rightValue: Any
+      init(_ l: Any, _ o: String, _ r: Any) {
+        leftValue = l
+        expectedOperator = o
+        rightValue = r
+      }
+    }
+    enum CallTestArgument {
+      case int(Int)
+      case str(String)
+      case infix(BodyStmt)
+    }
+
+    let tests: [(input: String, fnName: String, arguments: [CallTestArgument])] = [
+      ("add(1, 2 * 3, 4 + 5);", "add", [.int(1),
+                                        .infix(BodyStmt(2, "*", 3)),
+                                        .infix(BodyStmt(4, "+", 5))]),
+      ("sub(1);", "sub", [.int(1)]),
+      ("add(1, foobar);", "add", [.int(1), .str("foobar")]),
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      guard !checkParserErrors(parser) else {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+      XCTAssertEqual(program.statements.count, 1)
+      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
+        XCTFail("expressionStatement is nil.")
+        return
+      }
+
+      XCTAssertTrue(
+        program.statements[0] is ExpressionStatement,
+        "statement is not of the type `ExpressionStatement`.")
+
+      guard let callExpr = expressionStatement.expression as? CallExpression else {
+        XCTFail("expressionStatement.expression is not of the type `CallExpression`.")
+        return
+      }
+
+      XCTAssertEqual(
+        callExpr.function.tokenLiteral(),
+        testCase.fnName,
+        "Parsed function name is not \(testCase.fnName). Got=\(callExpr.function.tokenLiteral())"
+      )
+
+      XCTAssertEqual(
+        callExpr.arguments.count,
+        testCase.arguments.count,
+        """
+        callExpr.arguments.count is not equal to \(testCase.arguments.count).\
+        Got=\(callExpr.arguments.count)
+        """)
+
+
+      for (i, arg) in testCase.arguments.enumerated() {
+        switch arg {
+        case .int(let integerLiteral):
+          try validateIntegerLiteral(callExpr.arguments[i], expectedValue: integerLiteral)
+
+        case .str(let s):
+          try validateIdentifier(callExpr.arguments[i], expectedValue: s)
+
+        case .infix(let bodyStmt):
+          try validateInfixExpression(
+            callExpr.arguments[i],
+            leftValue: bodyStmt.leftValue,
+            operator: bodyStmt.expectedOperator,
+            rightValue: bodyStmt.rightValue)
+        }
+      }
+    }
+  }
+
 
   // MARK: - Stringly Tests
 
@@ -481,7 +566,10 @@ final class ParserTest: XCTestCase {
       ("(5 + 5) * 2", "((5 + 5) * 2)"),
       ("2 / (5 + 5)", "(2 / (5 + 5))"),
       ("-(5 + 5)", "(-(5 + 5))"),
-      ("!(true == true)", "(!(true == true))")
+      ("!(true == true)", "(!(true == true))"),
+      ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+      ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"),
+      ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")
     ]
     for testCase in tests {
       let lexer = Lexer(input: testCase.input)

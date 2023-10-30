@@ -14,7 +14,8 @@ public struct PrecedenceMapper {
     .plus: .sum,
     .minus: .sum,
     .slash: .product,
-    .asterisk: .product
+    .asterisk: .product,
+    .lParen: .call
   ]
 
   /// Gets the precedence for a  given token type.

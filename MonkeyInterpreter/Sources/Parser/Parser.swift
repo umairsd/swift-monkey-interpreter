@@ -59,6 +59,7 @@ public class Parser {
     registerInfix(for: .gt, fn: parseInfixExpression(left:))
     registerInfix(for: .eq, fn: parseInfixExpression(left:))
     registerInfix(for: .notEq, fn: parseInfixExpression(left:))
+    registerInfix(for: .lParen, fn: parseCallExpression(left:))
   }
 
 
@@ -411,6 +412,51 @@ public class Parser {
       infixOperator: infixOperator,
       rightExpression: right)
     return expr
+  }
+
+
+  private func parseCallExpression(left: Expression?) -> Expression? {
+    guard currentTokenIs(.lParen) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+    guard let function = left else {
+      errors.append("\(#function): function expression is nil.")
+      return nil
+    }
+
+    let t = currentToken
+    let arguments = parseFunctionCallArguments()
+    let callExpr = CallExpression(token: t, function: function, arguments: arguments)
+    return callExpr
+  }
+
+
+  /// Parses the arguments for a function call.
+  private func parseFunctionCallArguments() -> [Expression] {
+    guard currentTokenIs(.lParen) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return []
+    }
+
+    incrementTokens()
+
+    var arguments: [Expression] = []
+    while !currentTokenIs(.rParen) && !currentTokenIs(.eof) {
+      if let arg = parseExpression(withPrecedence: .lowest) {
+        arguments.append(arg)
+      }
+      incrementTokens()
+      if currentTokenIs(.comma) {
+        incrementTokens()
+      }
+    }
+
+    if !currentTokenIs(.rParen) {
+      return []
+    }
+
+    return arguments
   }
 
 
