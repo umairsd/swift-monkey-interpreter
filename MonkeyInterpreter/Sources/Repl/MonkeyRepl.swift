@@ -2,10 +2,24 @@
 
 import Foundation
 import Lexer
+import Parser
 
 /// A simple REPL for the Monkey programming language.
 public struct MonkeyRepl {
   private static let prompt = ">> "
+  private static let monkeyFace = """
+              __,__
+     .--.  .-"     "-.  .--.
+    / .. \\/  .-. .-.  \\/ .. \\
+   | |  '|  /   Y   \\  |'  | |
+   | \\   \\  \\ 0 | 0 /  /   / |
+    \\ '- ,\\.-\""\""\""\"-./, -' /
+     ''-' /_   ^ ^   _\\ '-''
+         |  \\._   _./  |
+         \\   \\ '~' /   /
+          '._ '-=-' _.'
+             '-----'
+  """
 
   public init() {}
 
@@ -13,15 +27,31 @@ public struct MonkeyRepl {
     print(Self.prompt, terminator: "")
 
     while let line = readLine() {
-      let lexer = Lexer(input: line)
-      var token = lexer.nextToken()
-
-      while token.type != .eof {
-        print(token)
-        token = lexer.nextToken()
+      defer {
+        print(Self.prompt, terminator: "")
       }
 
-      print(Self.prompt, terminator: "")
+      let lexer = Lexer(input: line)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        print("`parseProgram()` failed to parse the input.")
+        continue
+      }
+
+      if parser.errors.count != 0 {
+        printParseErrors(parser.errors)
+        continue
+      }
+
+      print(program.toString())
     }
+  }
+
+  private func printParseErrors(_ errors: [String]) {
+    print(Self.monkeyFace)
+    print("Whoops! We ran into some monkey business here!")
+    print("  parser errors:")
+    errors.forEach { print("\t\($0)") }
   }
 }

@@ -29,7 +29,7 @@ let package = Package(
     ),
     .target(
       name: "Repl",
-      dependencies: ["Lexer"]
+      dependencies: ["Lexer", "Parser"]
     ),
     .target(
       name: "Token",
