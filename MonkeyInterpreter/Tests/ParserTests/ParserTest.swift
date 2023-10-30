@@ -355,6 +355,133 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testFunctionLiteralParsing() throws {
+    struct BodyStmt {
+      let leftValue: Any
+      let expectedOperator: String
+      let rightValue: Any
+      init(_ l: Any, _ o: String, _ r: Any) {
+        leftValue = l
+        expectedOperator = o
+        rightValue = r
+      }
+    }
+
+    let tests: [(input: String, expectedParams: [String], bodyStmts: [BodyStmt])] = [
+      ("fn() {};", [], []),
+      ("fn(x) {};", ["x"], []),
+      ("fn(x, y, z) {};", ["x", "y", "z"], []),
+      ("fn(x, y, z) { x + y; 5 * z; };", ["x", "y", "z"], [BodyStmt("x", "+", "y"),
+                                                           BodyStmt(5, "*", "z")]),
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      guard !checkParserErrors(parser) else {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+      XCTAssertEqual(program.statements.count, 1)
+      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
+        XCTFail("expressionStatement is nil.")
+        return
+      }
+
+      XCTAssertTrue(
+        program.statements[0] is ExpressionStatement,
+        "statement is not of the type `ExpressionStatement`.")
+
+      guard let fnExpr = expressionStatement.expression as? FunctionLiteral else {
+        XCTFail("expressionStatement.expression is not of the type `FunctionLiteral`.")
+        return
+      }
+
+      XCTAssertEqual(
+        fnExpr.parameters.count,
+        testCase.expectedParams.count,
+        "fnExpr.parameter.count is not equal to \(testCase.expectedParams.count). Got=\(fnExpr.parameters.count)")
+
+      // Validate the parameters.
+      for (i, p) in fnExpr.parameters.enumerated() {
+        try validateLiteralExpression(p, expected: testCase.expectedParams[i])
+      }
+
+      XCTAssertEqual(
+        fnExpr.body.statements.count,
+        testCase.bodyStmts.count,
+        "fnExpr.body.statements.count is not equal to \(testCase.bodyStmts.count). Got=\(fnExpr.body.statements.count)")
+
+      // Validate the statements in teh body.
+      for (i, statement) in fnExpr.body.statements.enumerated() {
+        guard let bodyStmt = statement as? ExpressionStatement,
+              let bodyExpr = bodyStmt.expression
+        else {
+          XCTFail("fnExpr.body.statements[\(i)] is not an `Expression`.")
+          return
+        }
+
+        try validateInfixExpression(
+          bodyExpr,
+          leftValue: testCase.bodyStmts[i].leftValue,
+          operator: testCase.bodyStmts[i].expectedOperator,
+          rightValue: testCase.bodyStmts[i].rightValue)
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      guard !checkParserErrors(parser) else {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+      XCTAssertEqual(program.statements.count, 1)
+      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
+        XCTFail("expressionStatement is nil.")
+        return
+      }
+
+      XCTAssertTrue(
+        program.statements[0] is ExpressionStatement,
+        "statement is not of the type `ExpressionStatement`.")
+
+      guard let fnExpr = expressionStatement.expression as? FunctionLiteral else {
+        XCTFail("expressionStatement.expression is not of the type `FunctionLiteral`.")
+        return
+      }
+
+      for (i, p) in fnExpr.parameters.enumerated() {
+        try validateLiteralExpression(p, expected: testCase.expectedParams[i])
+      }
+    }
+  }
+
+
+  private func validateFunctionParameters() throws {
+    
+  }
+
+
+
   // MARK: - Stringly Tests
 
   func testInfixExpressions_Stringly() throws {

@@ -49,6 +49,7 @@ public class Parser {
     registerPrefix(for: .false, fn: parseBoolean)
     registerPrefix(for: .lParen, fn: parseGroupedExpression)
     registerPrefix(for: .if, fn: parseIfExpression)
+    registerPrefix(for: .function, fn: parseFunctionLiteral)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -238,6 +239,73 @@ public class Parser {
     return blockStmt
   }
 
+
+  /// Parses a `FunctionLiteral` starting from the current token.
+  private func parseFunctionLiteral() -> FunctionLiteral? {
+    guard currentTokenIs(.function) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken // Points to "fn"
+
+    guard expectPeekAndIncrement(.lParen) else {
+      errors.append("parseFunctionLiteral: Didn't find the opening `(` for the function.")
+      return nil
+    }
+
+    let parameters = parseFunctionParameters()
+
+
+//    incrementTokens()
+//
+//    var parameters: [Identifier] = []
+//    while !currentTokenIs(.rParen) && !currentTokenIs(.eof) {
+//      if let p = parseIdentifer() {
+//        paramters.append(p)
+//      }
+//      incrementTokens()
+//      if currentTokenIs(.comma) {
+//        incrementTokens()
+//      }
+//    }
+
+    guard expectPeekAndIncrement(.lBrace) else {
+      errors.append("parseFunctionLiteral: Didn't find the opening `{` for the function's body.")
+      return nil
+    }
+
+    guard let body = parseBlockStatement() else {
+      errors.append("parseFunctionLiteral: Could not parse the body of the function.")
+      return nil
+    }
+
+    let functionLiteral = FunctionLiteral(token: t, parameters: parameters, body: body)
+    return functionLiteral
+  }
+
+
+  /// Parses the parameters for a function.
+  private func parseFunctionParameters() -> [Identifier] {
+    guard currentTokenIs(.lParen) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return []
+    }
+
+    incrementTokens()
+
+    var parameters: [Identifier] = []
+    while !currentTokenIs(.rParen) && !currentTokenIs(.eof) {
+      if let p = parseIdentifer() {
+        parameters.append(p)
+      }
+      incrementTokens()
+      if currentTokenIs(.comma) {
+        incrementTokens()
+      }
+    }
+    return parameters
+  }
 
 
   /// Parses a `LetStatement` starting from the current token.
