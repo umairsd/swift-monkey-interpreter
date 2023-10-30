@@ -55,7 +55,10 @@ final class ParserTest: XCTestCase {
       XCTFail("`parseProgram()` failed to parse the input.")
       return
     }
-    checkParserErrors(parser)
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
 
     XCTAssertEqual(program.statements.count, 3)
 
@@ -82,20 +85,21 @@ final class ParserTest: XCTestCase {
       XCTFail("`parseProgram()` failed to parse the input.")
       return
     }
-    checkParserErrors(parser)
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
 
     XCTAssertEqual(program.statements.count, 1)
-    XCTAssertTrue(
-      program.statements[0] is ExpressionStatement,
-      "statement is not of the type `ExpressionStatement`.")
 
-    let expressionStatement = program.statements[0] as! ExpressionStatement
-    XCTAssertNotNil(expressionStatement.expression)
-
-    XCTAssertTrue(
-      expressionStatement.expression! is Identifier,
-      "expressionStatement.expression is not of the type `Identifier`.")
-    let expressionIdentifer = expressionStatement.expression! as! Identifier
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let expressionIdentifer = expressionStmt.expression as? Identifier else {
+      XCTFail("expressionStatement.expression is not of the type `Identifier`.")
+      return
+    }
 
     XCTAssertEqual(
       expressionIdentifer.value,
@@ -117,17 +121,23 @@ final class ParserTest: XCTestCase {
       XCTFail("`parseProgram()` failed to parse the input.")
       return
     }
-    checkParserErrors(parser)
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
 
     XCTAssertEqual(program.statements.count, 1)
-    XCTAssertTrue(
-      program.statements[0] is ExpressionStatement,
-      "statement is not of the type `ExpressionStatement`.")
 
-    let expressionStatement = program.statements[0] as! ExpressionStatement
-    XCTAssertNotNil(expressionStatement.expression)
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let expression = expressionStmt.expression as? IntegerLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `IntegerLiteral`.")
+      return
+    }
 
-    try validateIntegerLiteral(expressionStatement.expression!, expectedValue: 5)
+    try validateIntegerLiteral(expression, expectedValue: 5)
   }
 
 
@@ -153,12 +163,12 @@ final class ParserTest: XCTestCase {
       }
 
       XCTAssertEqual(program.statements.count, 1)
-      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-        XCTFail("Statement is not of type `ExpressionStatement`.")
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
         return
       }
-
-      guard let prefixExpression = expressionStatement.expression else {
+      guard let prefixExpression = expressionStmt.expression else {
         XCTFail("expressionStatement.expression is nil.")
         return
       }
@@ -202,18 +212,18 @@ final class ParserTest: XCTestCase {
       }
       
       XCTAssertEqual(program.statements.count, 1)
-      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-        XCTFail("Statement is not of type `ExpressionStatement`.")
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
         return
       }
-
-      guard let expression = expressionStatement.expression else {
+      guard let infixExpression = expressionStmt.expression else {
         XCTFail("expressionStatement.expression is nil.")
         return
       }
 
       try validateInfixExpression(
-        expression,
+        infixExpression,
         leftValue: testCase.leftValue,
         operator: testCase.expectedOperator,
         rightValue: testCase.rightValue)
@@ -241,17 +251,15 @@ final class ParserTest: XCTestCase {
       }
 
       XCTAssertEqual(program.statements.count, 1)
-      XCTAssertTrue(
-        program.statements[0] is ExpressionStatement,
-        "statement is not of the type `ExpressionStatement`.")
 
-      let expressionStatement = program.statements[0] as! ExpressionStatement
-      XCTAssertNotNil(expressionStatement.expression)
-
-      XCTAssertTrue(
-        expressionStatement.expression! is Boolean,
-        "expressionStatement.expression is not of the type `Boolean`.")
-      let boolean = expressionStatement.expression! as! Boolean
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
+        return
+      }
+      guard let boolean = expressionStmt.expression as? Boolean else {
+        XCTFail("expressionStatement.expression is not of the type `Boolean`.")
+        return
+      }
 
       XCTAssertEqual(
         boolean.value,
@@ -278,16 +286,12 @@ final class ParserTest: XCTestCase {
     }
 
     XCTAssertEqual(program.statements.count, 1)
-    guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-      XCTFail("expressionStatement is nil.")
+
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
       return
     }
-
-    XCTAssertTrue(
-      program.statements[0] is ExpressionStatement,
-      "statement is not of the type `ExpressionStatement`.")
-
-    guard let ifExpr =  expressionStatement.expression as? IfExpression else {
+    guard let ifExpr = expressionStmt.expression as? IfExpression else {
       XCTFail("expressionStatement.expression is not of the type `IfExpression`.")
       return
     }
@@ -323,17 +327,14 @@ final class ParserTest: XCTestCase {
       return
     }
 
+
     XCTAssertEqual(program.statements.count, 1)
-    guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-      XCTFail("expressionStatement is nil.")
+
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
       return
     }
-
-    XCTAssertTrue(
-      program.statements[0] is ExpressionStatement,
-      "statement is not of the type `ExpressionStatement`.")
-
-    guard let ifExpr =  expressionStatement.expression as? IfExpression else {
+    guard let ifExpr = expressionStmt.expression as? IfExpression else {
       XCTFail("expressionStatement.expression is not of the type `IfExpression`.")
       return
     }
@@ -393,17 +394,14 @@ final class ParserTest: XCTestCase {
         XCTFail("Test failed due to preceding parser errors.")
         return
       }
+
       XCTAssertEqual(program.statements.count, 1)
-      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-        XCTFail("expressionStatement is nil.")
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
         return
       }
-
-      XCTAssertTrue(
-        program.statements[0] is ExpressionStatement,
-        "statement is not of the type `ExpressionStatement`.")
-
-      guard let fnExpr = expressionStatement.expression as? FunctionLiteral else {
+      guard let fnExpr = expressionStmt.expression as? FunctionLiteral else {
         XCTFail("expressionStatement.expression is not of the type `FunctionLiteral`.")
         return
       }
@@ -411,7 +409,10 @@ final class ParserTest: XCTestCase {
       XCTAssertEqual(
         fnExpr.parameters.count,
         testCase.expectedParams.count,
-        "fnExpr.parameter.count is not equal to \(testCase.expectedParams.count). Got=\(fnExpr.parameters.count)")
+        """
+        fnExpr.parameter.count is not equal to \(testCase.expectedParams.count).\
+        Got=\(fnExpr.parameters.count)
+        """)
 
       // Validate the parameters.
       for (i, p) in fnExpr.parameters.enumerated() {
@@ -421,7 +422,10 @@ final class ParserTest: XCTestCase {
       XCTAssertEqual(
         fnExpr.body.statements.count,
         testCase.bodyStmts.count,
-        "fnExpr.body.statements.count is not equal to \(testCase.bodyStmts.count). Got=\(fnExpr.body.statements.count)")
+        """
+        fnExpr.body.statements.count is not equal to \(testCase.bodyStmts.count). \
+        Got=\(fnExpr.body.statements.count)
+        """)
 
       // Validate the statements in teh body.
       for (i, statement) in fnExpr.body.statements.enumerated() {
@@ -478,17 +482,14 @@ final class ParserTest: XCTestCase {
         XCTFail("Test failed due to preceding parser errors.")
         return
       }
+
       XCTAssertEqual(program.statements.count, 1)
-      guard let expressionStatement = program.statements[0] as? ExpressionStatement else {
-        XCTFail("expressionStatement is nil.")
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
         return
       }
-
-      XCTAssertTrue(
-        program.statements[0] is ExpressionStatement,
-        "statement is not of the type `ExpressionStatement`.")
-
-      guard let callExpr = expressionStatement.expression as? CallExpression else {
+      guard let callExpr = expressionStmt.expression as? CallExpression else {
         XCTFail("expressionStatement.expression is not of the type `CallExpression`.")
         return
       }
