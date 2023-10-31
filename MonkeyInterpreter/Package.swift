@@ -28,6 +28,10 @@ let package = Package(
       dependencies: ["Lexer", "AST"]
     ),
     .target(
+      name: "Object",
+      dependencies: ["AST", "Parser"]
+    ),
+    .target(
       name: "Repl",
       dependencies: ["Lexer", "Parser"]
     ),
