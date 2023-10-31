@@ -7,6 +7,9 @@ import Token
 
 public struct Evaluator {
 
+  private let trueObject = Boolean(value: true)
+  private let falseObject = Boolean(value: false)
+
   public init() {}
 
   public func eval(_ node: Node?) -> Object? {
@@ -25,6 +28,9 @@ public struct Evaluator {
       // Expressions
     case let intLiteral as IntegerLiteral:
       Integer(value: intLiteral.value)
+
+    case let booleanLiteral as BooleanLiteral:
+      booleanLiteral.value ? trueObject : falseObject
 
     default:
       nil

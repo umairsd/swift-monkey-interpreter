@@ -27,7 +27,38 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  func testEvalBooleanLiteral() throws {
+    let tests: [(input: String, expected: Bool)] = [
+      ("true", true),
+      ("false", false)
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        try validateBooleanObject(obj, expected: testCase.expected)
+      }
+    }
+  }
+
+
   // MARK: - Validators
+
+  private func validateBooleanObject(_ obj: Object, expected: Bool) throws {
+    guard let result = obj as? Boolean else {
+      XCTFail("object is not `Boolean`. Got=\(obj)")
+      return
+    }
+
+    XCTAssertEqual(
+      result.value,
+      expected,
+      "Object has the wrong value. Got=\(result.value), want=\(expected)")
+  }
 
 
   private func validateIntegerObject(_ obj: Object, expected: Int) throws {

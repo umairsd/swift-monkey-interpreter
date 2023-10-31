@@ -6,6 +6,10 @@ import Foundation
 public struct Boolean: Object {
   public let value: Bool
 
+  public init(value: Bool) {
+    self.value = value
+  }
+
   // MARK: - Protocol (Object)
 
   public func type() -> ObjectType {
