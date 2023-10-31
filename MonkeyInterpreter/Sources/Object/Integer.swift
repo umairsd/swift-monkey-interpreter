@@ -7,6 +7,9 @@ public struct Integer: Object {
   /// The value being wrapped by the `Integer` type.
   public let value: Int
 
+  public init(value: Int) {
+    self.value = value
+  }
 
   // MARK: - Protocol (Object)
 

@@ -20,6 +20,10 @@ let package = Package(
       dependencies: ["Token"]
     ),
     .target(
+      name: "Evaluator",
+      dependencies: ["AST", "Object", "Parser", "Token"]
+    ),
+    .target(
       name: "Lexer",
       dependencies: ["Token"]
     ),
@@ -29,7 +33,7 @@ let package = Package(
     ),
     .target(
       name: "Object",
-      dependencies: ["AST", "Parser"]
+      dependencies: []
     ),
     .target(
       name: "Repl",
@@ -43,6 +47,10 @@ let package = Package(
     .testTarget(
       name: "ASTTests",
       dependencies: ["AST", "Token"]
+    ),
+    .testTarget(
+      name: "EvaluatorTests",
+      dependencies: ["Evaluator", "Object", "Lexer", "Parser"]
     ),
     .testTarget(
       name: "LexerTests",
