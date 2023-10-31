@@ -5,6 +5,8 @@ import Foundation
 /// A type that wraps integer values.
 public struct Null: Object {
 
+  public init() {}
+
   // MARK: - Protocol (Object)
 
   public func type() -> ObjectType {

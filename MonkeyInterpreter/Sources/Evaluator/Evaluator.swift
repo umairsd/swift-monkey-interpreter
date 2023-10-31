@@ -7,6 +7,7 @@ import Token
 
 public struct Evaluator {
 
+  private let nullObject = Null()
   private let trueObject = Boolean(value: true)
   private let falseObject = Boolean(value: false)
 
