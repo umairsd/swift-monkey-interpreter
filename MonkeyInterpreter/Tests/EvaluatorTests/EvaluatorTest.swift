@@ -11,7 +11,9 @@ final class EvaluatorTest: XCTestCase {
   func testEvalIntegerExpression() throws {
     let tests: [(input: String, expected: Int)] = [
       ("5", 5),
-      ("128", 128)
+      ("128", 128),
+      ("-7", -7),
+      ("-10", -10),
     ]
 
     for testCase in tests {
@@ -31,6 +33,29 @@ final class EvaluatorTest: XCTestCase {
     let tests: [(input: String, expected: Bool)] = [
       ("true", true),
       ("false", false)
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        try validateBooleanObject(obj, expected: testCase.expected)
+      }
+    }
+  }
+
+
+  func testBangOperator() throws {
+    let tests: [(input: String, expected: Bool)] = [
+      ("!true", false),
+      ("!false", true),
+      ("!!false", false),
+      ("!!true", true),
+      ("!5", false),
+      ("!!5", true),
     ]
 
     for testCase in tests {

@@ -18,23 +18,27 @@ public struct Evaluator {
       return nil
     }
 
-    return switch node {
+    switch node {
       // Statements
     case let p as Program:
-      evalStatements(stmts: p.statements)
+      return evalStatements(stmts: p.statements)
 
     case let exprStmt as ExpressionStatement:
-      eval(exprStmt.expression)
+      return eval(exprStmt.expression)
 
       // Expressions
     case let intLiteral as IntegerLiteral:
-      Integer(value: intLiteral.value)
+      return Integer(value: intLiteral.value)
 
     case let booleanLiteral as BooleanLiteral:
-      booleanLiteral.value ? trueObject : falseObject
+      return booleanLiteral.value ? trueObject : falseObject
+
+    case let prefixExpr as PrefixExpression:
+      let right = eval(prefixExpr.rightExpression)
+      return evalPrefixExpression(prefixExpr.prefixOperator, right)
 
     default:
-      nil
+      return nil
     }
   }
 
@@ -47,5 +51,42 @@ public struct Evaluator {
       result = eval(stmt)
     }
     return result
+  }
+
+
+  private func evalPrefixExpression(_ prefixOperator: String, _ rightObject: Object?) -> Object? {
+    switch prefixOperator {
+    case "!":
+      return evalBangOperatorExpression(rightObject)
+
+    case "-":
+      return evalMinusPrefixOperatorExpression(rightObject)
+
+    default:
+      return nil
+    }
+  }
+
+
+  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object? {
+    guard let rightIntegerLiteral = right as? Integer else {
+      return nullObject
+    }
+    let v = rightIntegerLiteral.value
+    return Integer(value: -v)
+  }
+
+  private func evalBangOperatorExpression(_ right: Object?) -> Object? {
+    guard let rightObject = right else {
+      return nullObject
+    }
+
+    if rightObject === trueObject {
+      return falseObject
+    } else if rightObject === falseObject {
+      return trueObject
+    } else {
+      return falseObject
+    }
   }
 }
