@@ -3,7 +3,7 @@
 import Foundation
 
 /// A type that wraps integer values.
-public struct Null: Object {
+public class Null: Object {
 
   public init() {}
 

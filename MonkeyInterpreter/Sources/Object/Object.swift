@@ -4,7 +4,7 @@ import Foundation
 
 /// Every value in the Monkey source code will be wrapped inside a struct, which fulfills
 /// this `Object` interface.
-public protocol Object {
+public protocol Object: AnyObject {
 
   func type() -> ObjectType
 

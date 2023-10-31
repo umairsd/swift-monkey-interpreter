@@ -3,7 +3,7 @@
 import Foundation
 
 /// A type that wraps integer values.
-public struct Boolean: Object {
+public class Boolean: Object {
   public let value: Bool
 
   public init(value: Bool) {
