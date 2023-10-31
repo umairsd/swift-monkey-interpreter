@@ -1,6 +1,7 @@
 // Created on 10/24/23.
 
 import Foundation
+import Evaluator
 import Lexer
 import Parser
 
@@ -44,7 +45,12 @@ public struct MonkeyRepl {
         continue
       }
 
-      print(program.toString())
+      guard let evaluated = Evaluator().eval(program) else {
+        print("Error: Unable to evaluate the parsed program.")
+        continue
+      }
+
+      print(evaluated.inspect())
     }
   }
 

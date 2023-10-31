@@ -7,6 +7,8 @@ import Token
 
 public struct Evaluator {
 
+  public init() {}
+
   public func eval(_ node: Node?) -> Object? {
     guard let node = node else {
       return nil
