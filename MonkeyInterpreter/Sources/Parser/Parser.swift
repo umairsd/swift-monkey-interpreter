@@ -471,12 +471,12 @@ public class Parser {
 
 
   /// Parses a `Boolean` starting from the current token.
-  private func parseBoolean() -> Boolean? {
+  private func parseBoolean() -> BooleanLiteral? {
     guard currentTokenIs(.true) || currentTokenIs(.false) else {
       errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
     }
-    return Boolean(token: currentToken, value: currentTokenIs(.true))
+    return BooleanLiteral(token: currentToken, value: currentTokenIs(.true))
   }
 
 

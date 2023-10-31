@@ -240,7 +240,7 @@ final class ParserTest: XCTestCase {
   }
 
 
-  func testBoolean() throws {
+  func testBooleanLiteral() throws {
     let tests: [(input: String, expectedValue: Bool)] = [
       ("true", true),
       ("false", false)
@@ -265,7 +265,7 @@ final class ParserTest: XCTestCase {
         XCTFail("statement is not of the type `ExpressionStatement`.")
         return
       }
-      guard let boolean = expressionStmt.expression as? Boolean else {
+      guard let boolean = expressionStmt.expression as? BooleanLiteral else {
         XCTFail("expressionStatement.expression is not of the type `Boolean`.")
         return
       }
@@ -672,7 +672,7 @@ final class ParserTest: XCTestCase {
 
   /// Validates that the given expression is a `Boolean`, with the given value.
   private func validateBooleanLiteral(_ expression: Expression, expectedValue: Bool) throws {
-    guard let booleanLiteral = expression as? Boolean else {
+    guard let booleanLiteral = expression as? BooleanLiteral else {
       XCTFail("expression is not of the type `Boolean`.")
       return
     }
@@ -743,7 +743,6 @@ final class ParserTest: XCTestCase {
       name,
       "letStatement.name.tokenLiteral() not \(name). Got=\(letStatement.name.tokenLiteral())")
 
-    // TODO: Validate the expression to the right of assignment.
     XCTAssertEqual(
       letStatement.name.value,
       name,

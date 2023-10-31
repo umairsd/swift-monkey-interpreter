@@ -3,8 +3,8 @@
 import Foundation
 import Token
 
-
-public class Boolean: Expression {
+/// Represents a boolean literal, `true` or `false`.
+public class BooleanLiteral: Expression {
   public let value: Bool
 
   public init(token: Token, value: Bool) {
