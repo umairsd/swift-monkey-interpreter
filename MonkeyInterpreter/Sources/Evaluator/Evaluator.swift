@@ -37,6 +37,11 @@ public struct Evaluator {
       let right = eval(prefixExpr.rightExpression)
       return evalPrefixExpression(prefixExpr.prefixOperator, right)
 
+    case let infixExpr as InfixExpression:
+      let left = eval(infixExpr.leftExpression)
+      let right = eval(infixExpr.rightExpression)
+      return evalInfixExpression(infixExpr.infixOperator, leftObject: left, rightObject: right)
+
     default:
       return nil
     }
@@ -54,7 +59,74 @@ public struct Evaluator {
   }
 
 
-  private func evalPrefixExpression(_ prefixOperator: String, _ rightObject: Object?) -> Object? {
+  // MARK: Private (Infix)
+
+
+  private func evalInfixExpression(
+    _ infixOperator: String,
+    leftObject left: Object?,
+    rightObject right: Object?
+  ) -> Object {
+
+    if let i1 = left as? Integer, let i2 = right as? Integer {
+      return evalIntegerInfixExpression(infixOperator, leftInt: i1, rightInt: i2)
+    }
+
+    if infixOperator == "==" {
+      return booleanObjectFor(left === right)
+    }
+
+    if infixOperator == "!=" {
+      return booleanObjectFor(left !== right)
+    }
+
+    return nullObject
+  }
+
+
+  private func evalIntegerInfixExpression(
+    _ infixOperator: String,
+    leftInt: Integer,
+    rightInt: Integer
+  ) -> Object {
+
+    let l = leftInt.value
+    let r = rightInt.value
+
+    switch infixOperator {
+    case "+":
+      return Integer(value: l + r)
+
+    case "-":
+      return Integer(value: l - r)
+
+    case "*":
+      return Integer(value: l * r)
+
+    case "/":
+      return Integer(value: l / r)
+
+    case "<":
+      return booleanObjectFor(l < r)
+
+    case ">":
+      return booleanObjectFor(l > r)
+
+    case "==":
+      return booleanObjectFor(l == r)
+
+    case "!=":
+      return booleanObjectFor(l != r)
+
+    default:
+      return nullObject
+    }
+  }
+
+
+  // MARK: Private (Prefix)
+
+  private func evalPrefixExpression(_ prefixOperator: String, _ rightObject: Object?) -> Object {
     switch prefixOperator {
     case "!":
       return evalBangOperatorExpression(rightObject)
@@ -63,12 +135,12 @@ public struct Evaluator {
       return evalMinusPrefixOperatorExpression(rightObject)
 
     default:
-      return nil
+      return nullObject
     }
   }
 
 
-  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object? {
+  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
     guard let rightIntegerLiteral = right as? Integer else {
       return nullObject
     }
@@ -76,7 +148,8 @@ public struct Evaluator {
     return Integer(value: -v)
   }
 
-  private func evalBangOperatorExpression(_ right: Object?) -> Object? {
+
+  private func evalBangOperatorExpression(_ right: Object?) -> Object {
     guard let rightObject = right else {
       return nullObject
     }
@@ -88,5 +161,10 @@ public struct Evaluator {
     } else {
       return falseObject
     }
+  }
+
+
+  private func booleanObjectFor(_ condition: Bool) -> Boolean {
+    condition ? trueObject : falseObject
   }
 }
