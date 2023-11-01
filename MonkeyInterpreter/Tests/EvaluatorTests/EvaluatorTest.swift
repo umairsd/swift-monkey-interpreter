@@ -18,6 +18,22 @@ final class EvaluatorTest: XCTestCase {
       return d;
       """, 
        99),
+
+      ("""
+      let add = fn(a, b) { a + b };
+      let sub = fn(a, b) { a - b };
+      let applyFunc = fn(a, b, func) { func(a, b) };
+      applyFunc(2, 2, add);
+      """,
+      4),
+
+      ("""
+      let add = fn(a, b) { a + b };
+      let sub = fn(a, b) { a - b };
+      let applyFunc = fn(a, b, func) { func(a, b) };
+      applyFunc(10, 2, sub);
+      """,
+      8)
     ]
 
     for testCase in tests {
@@ -259,6 +275,26 @@ final class EvaluatorTest: XCTestCase {
 
       try validateIntegerObject(evaluated, expected: testCase.expected)
     }
+  }
+
+
+  func testClosures() throws {
+    let input = """
+    let newAdder = fn(x) {
+      fn(y) { x + y };
+    };
+
+    let addTwo = newAdder(2);
+    addTwo(2);
+    """
+
+    let evaluated = runEval1(input)
+    if let errorObj = evaluated as? ErrorObject {
+      XCTFail(errorObj.message)
+      return
+    }
+
+    try validateIntegerObject(evaluated, expected: 4)
   }
 
 
