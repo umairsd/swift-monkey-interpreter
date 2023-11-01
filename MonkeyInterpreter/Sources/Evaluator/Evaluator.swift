@@ -21,13 +21,13 @@ public struct Evaluator {
     switch node {
       // Statements
     case let p as Program:
-      return evalStatements(stmts: p.statements)
+      return evalProgram(p)
 
     case let exprStmt as ExpressionStatement:
       return eval(exprStmt.expression)
 
     case let blockStmt as BlockStatement:
-      return evalStatements(stmts: blockStmt.statements)
+      return evalBlockStatement(blockStmt)
 
     case let returnStmt as ReturnStatement:
       let v = eval(returnStmt.returnValue)
@@ -60,10 +60,10 @@ public struct Evaluator {
   // MARK: - Evaluators
 
   
-  private func evalStatements(stmts: [Statement]) -> Object? {
+  private func evalProgram(_ program: Program) -> Object? {
     var result: Object?
-    for stmt in stmts {
-      result = eval(stmt)
+    for statement in program.statements {
+      result = eval(statement)
 
       if let returnValue = result as? ReturnValue {
         return returnValue.value
@@ -71,6 +71,24 @@ public struct Evaluator {
     }
     return result
   }
+
+
+  private func evalBlockStatement(_ blockStatement: BlockStatement) -> Object? {
+    var result: Object?
+
+    for statement in blockStatement.statements {
+      result = eval(statement)
+
+      // Check the `type()` of each evaluation result. If it is `.returnValue`, simply return
+      // the object without unwrapping its value, so it stops execution in a possible outer
+      // block statement and bubbles up to `evalProgram()` where it finally gets unwrapped.
+      if let r = result, r.type() == .returnValue {
+        return r
+      }
+    }
+    return result
+  }
+
 
   private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
     guard let rightIntegerLiteral = right as? Integer else {
