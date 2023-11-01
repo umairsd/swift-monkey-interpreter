@@ -178,6 +178,7 @@ final class EvaluatorTest: XCTestCase {
          return 1;
        }
        """, "Unknown operator: boolean + boolean"),
+      ("foobar", "Identifier not found: foobar"),
     ]
 
     for testCase in tests {

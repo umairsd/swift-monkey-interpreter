@@ -36,12 +36,23 @@ public struct Evaluator {
       }
       return ReturnObject(value: v)
 
+    case let letStmt as LetStatement:
+      let v = eval(letStmt.value, within: environment)
+      if isError(v) {
+        return v
+      }
+      environment.setObject(for: letStmt.name.value, v)
+      return Ok()
+
       // Expressions
     case let intLiteral as IntegerLiteral:
       return IntegerObject(value: intLiteral.value)
 
     case let booleanLiteral as BooleanLiteral:
       return booleanLiteral.value ? trueObject : falseObject
+
+    case let identifer as Identifier:
+      return evalIdentifier(identifer, within: environment)
 
     case let prefixExpr as PrefixExpression:
       let right = eval(prefixExpr.rightExpression, within: environment)
@@ -129,6 +140,19 @@ public struct Evaluator {
     } else {
       return nullObject
     }
+  }
+
+
+  private func evalIdentifier(
+    _ identifer: Identifier,
+    within environment: Environment
+  ) -> Object? {
+
+    guard let v = environment.getObject(for: identifer.value) else {
+      return newError(for: "Identifier not found: \(identifer.value)")
+    }
+
+    return v
   }
 
 

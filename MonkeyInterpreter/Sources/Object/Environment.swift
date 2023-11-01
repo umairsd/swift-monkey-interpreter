@@ -13,7 +13,10 @@ public class Environment {
     return store[name]
   }
 
-  public func setObject(for name: String, _ object: Object) {
-    store[name] = object
+  public func setObject(for name: String, _ object: Object?) {
+    guard let o = object else {
+      return
+    }
+    store[name] = o
   }
 }

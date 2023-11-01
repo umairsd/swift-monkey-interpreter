@@ -10,4 +10,5 @@ public enum ObjectType {
   case null
   case `return`
   case error
+  case ok
 }
