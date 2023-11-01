@@ -64,23 +64,7 @@ final class ParserTest: XCTestCase {
 
       XCTAssertEqual(program.statements.count, 1)
 
-      guard let returnStmt = program.statements.first as? ReturnStatement else {
-        XCTFail("statement is not of type `ReturnStatement`")
-        return
-      }
-
-      XCTAssertEqual(
-        returnStmt.tokenLiteral(),
-        "return",
-        "statement.tokenLiteral() not `return`. Got=\(returnStmt.tokenLiteral())")
-
-      if let expectedValue = testCase.expectedValue, let actualValue = returnStmt.returnValue {
-        try validateLiteralExpression(actualValue, expected: expectedValue)
-      } else if let actualValue = returnStmt.returnValue {
-        XCTFail("Got a return value of \(actualValue.toString()), even though nil expected.")
-      } else {
-        XCTAssertNil(returnStmt.returnValue, "returnValue must be nil.")
-      }
+      try validateReturnStatement(program.statements[0], expectedValue: testCase.expectedValue)
     }
   }
 
@@ -319,6 +303,34 @@ final class ParserTest: XCTestCase {
     try validateIdentifier(consequenceExpr, expectedValue: "x")
 
     XCTAssertNil(ifExpr.alternative, "ifExpression.alternative is not nil.")
+  }
+
+
+  func testIfExpression2_bodyStatements() throws {
+    let input = "if (x < y) { let z = x + 1; let w = z * 5; return w; }"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram(), !checkParserErrors(parser) else {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    guard let expressionStmt = program.statements.first as? ExpressionStatement,
+          let ifExpr = expressionStmt.expression as? IfExpression
+    else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+
+    try validateInfixExpression(ifExpr.condition, leftValue: "x", operator: "<", rightValue: "y")
+
+    XCTAssertEqual(ifExpr.consequence.statements.count, 3)
+
+    // If Body
+    try validateLetStatement(ifExpr.consequence.statements[0], identifier: "z")
+    try validateLetStatement(ifExpr.consequence.statements[1], identifier: "w")
+    try validateReturnStatement(ifExpr.consequence.statements[2], expectedValue: "w")
   }
 
 
@@ -727,7 +739,6 @@ final class ParserTest: XCTestCase {
   }
 
 
-
   private func validateLetStatement(_ statement: Statement, identifier name: String) throws {
     XCTAssertEqual(
       statement.tokenLiteral(),
@@ -747,6 +758,27 @@ final class ParserTest: XCTestCase {
       letStatement.name.value,
       name,
       "letStatement.name.value not \(name). Got=\(letStatement.name.value)")
+  }
+
+
+  private func validateReturnStatement(_ statement: Statement, expectedValue: Any?) throws {
+    guard let returnStmt = statement as? ReturnStatement else {
+      XCTFail("statement is not of type `ReturnStatement`")
+      return
+    }
+
+    XCTAssertEqual(
+      returnStmt.tokenLiteral(),
+      "return",
+      "statement.tokenLiteral() not `return`. Got=\(returnStmt.tokenLiteral())")
+
+    if let expectedValue = expectedValue, let actualValue = returnStmt.returnValue {
+      try validateLiteralExpression(actualValue, expected: expectedValue)
+    } else if let actualValue = returnStmt.returnValue {
+      XCTFail("Got a return value of \(actualValue.toString()), even though nil expected.")
+    } else {
+      XCTAssertNil(returnStmt.returnValue, "returnValue must be nil.")
+    }
   }
 
 
