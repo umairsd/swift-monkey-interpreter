@@ -130,6 +130,38 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  func testReturnStatements() throws {
+    let tests: [(input: String, expected: Int?)] = [
+//      ("return;", nil),
+      ("return 10;", 10),
+      ("return 10; 9;", 10),
+      ("return 2 * 5; 9;", 10),
+      ("9; return 2 * 5; 9;", 10),
+      ("""
+       if (10 > 1) { 
+         if (10 > 1) {
+           return 10;
+         }
+         return 1;
+       }
+       """, 10)
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        if let expectedInt = testCase.expected {
+          try validateIntegerObject(obj, expected: expectedInt)
+        }
+      }
+    }
+  }
+
+
   // MARK: - Validators
 
 

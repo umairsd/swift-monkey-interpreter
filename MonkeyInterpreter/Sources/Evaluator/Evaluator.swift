@@ -29,6 +29,10 @@ public struct Evaluator {
     case let blockStmt as BlockStatement:
       return evalStatements(stmts: blockStmt.statements)
 
+    case let returnStmt as ReturnStatement:
+      let v = eval(returnStmt.returnValue)
+      return ReturnValue(value: v)
+
       // Expressions
     case let intLiteral as IntegerLiteral:
       return Integer(value: intLiteral.value)
@@ -60,6 +64,10 @@ public struct Evaluator {
     var result: Object?
     for stmt in stmts {
       result = eval(stmt)
+
+      if let returnValue = result as? ReturnValue {
+        return returnValue.value
+      }
     }
     return result
   }
