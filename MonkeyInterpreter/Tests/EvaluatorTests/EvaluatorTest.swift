@@ -21,14 +21,13 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        try validateIntegerObject(obj, expected: testCase.expected)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
       }
+
+      try validateIntegerObject(evaluated, expected: testCase.expected)
     }
   }
 
@@ -53,14 +52,13 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        try validateIntegerObject(obj, expected: testCase.expected)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
       }
+
+      try validateIntegerObject(evaluated, expected: testCase.expected)
     }
   }
 
@@ -89,14 +87,13 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        try validateBooleanObject(obj, expected: testCase.expected)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
       }
+
+      try validateBooleanObject(evaluated, expected: testCase.expected)
     }
   }
 
@@ -112,14 +109,13 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        try validateBooleanObject(obj, expected: testCase.expected)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
       }
+
+      try validateBooleanObject(evaluated, expected: testCase.expected)
     }
   }
 
@@ -138,18 +134,17 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
+      }
 
-      case .success(let obj):
-        switch testCase.expected {
-        case let expectedInt as Int:
-          try validateIntegerObject(obj, expected: expectedInt)
-        default:
-          try validateNullObject(obj)
-        }
+      switch testCase.expected {
+      case let expectedInt as Int:
+        try validateIntegerObject(evaluated, expected: expectedInt)
+      default:
+        try validateNullObject(evaluated)
       }
     }
   }
@@ -173,15 +168,14 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
+      }
 
-      case .success(let obj):
-        if let expectedInt = testCase.expected {
-          try validateIntegerObject(obj, expected: expectedInt)
-        }
+      if let expectedInt = testCase.expected {
+        try validateIntegerObject(evaluated, expected: expectedInt)
       }
     }
   }
@@ -207,49 +201,42 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        guard let errorObj = obj as? ErrorObject else {
-          XCTFail("No error object returned. Got=\(type(of: obj))")
-          return
-        }
-
-        XCTAssertEqual(errorObj.message, testCase.expectedMessage)
+      let evaluated = runEval1(testCase.input)
+      guard let errorObj = evaluated as? ErrorObject else {
+        XCTFail("No error object returned. Got=\(type(of: evaluated))")
+        return
       }
+
+      XCTAssertEqual(errorObj.message, testCase.expectedMessage)
     }
   }
 
 
   func testFunctionObject() throws {
     let input = "fn(x) { x + 2; }"
-    let evaluated = runEval(input)
-    switch evaluated {
-    case .failure(let errorMsg):
-      XCTFail(errorMsg.rawValue)
-
-    case .success(let obj):
-      guard let functionObject = obj as? FunctionObject else {
-        XCTFail("No function object returned. Got=\(type(of: obj))")
-        return
-      }
-
-      XCTAssertEqual(
-        functionObject.parameters.count,
-        1,
-        "Function has wrong parameters. Got=\(functionObject.parameters)")
-
-      XCTAssertEqual(
-        functionObject.parameters[0].toString(),
-        "x",
-        "Parameter is not `x`. Got=\(functionObject.parameters[0].toString())")
-
-      let expectedBody = "(x + 2)"
-      XCTAssertEqual(functionObject.body.toString(), expectedBody)
+    let evaluated = runEval1(input)
+    if let errorObj = evaluated as? ErrorObject {
+      XCTFail(errorObj.message)
+      return
     }
+
+    guard let functionObject = evaluated as? FunctionObject else {
+      XCTFail("No function object returned. Got=\(type(of: evaluated))")
+      return
+    }
+
+    XCTAssertEqual(
+      functionObject.parameters.count,
+      1,
+      "Function has wrong parameters. Got=\(functionObject.parameters)")
+
+    XCTAssertEqual(
+      functionObject.parameters[0].toString(),
+      "x",
+      "Parameter is not `x`. Got=\(functionObject.parameters[0].toString())")
+
+    let expectedBody = "(x + 2)"
+    XCTAssertEqual(functionObject.body.toString(), expectedBody)
   }
 
 
@@ -264,14 +251,13 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evalResult = runEval(testCase.input)
-      switch evalResult {
-      case .failure(let errorMsg):
-        XCTFail(errorMsg.rawValue)
-
-      case .success(let obj):
-        try validateIntegerObject(obj, expected: testCase.expected)
+      let evaluated = runEval1(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
       }
+
+      try validateIntegerObject(evaluated, expected: testCase.expected)
     }
   }
 
@@ -315,20 +301,17 @@ final class EvaluatorTest: XCTestCase {
 
   // MARK: - Private
 
-  private func runEval(_ input: String) -> Result<Object, TestError> {
+  private func runEval1(_ input: String) -> Object {
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
     let env = Environment()
 
     guard let program = parser.parseProgram(), !checkParserErrors(parser) else {
-      return .failure(.parseError)
+      return ErrorObject(message: "`parseProgram()` failed to parse the input.")
     }
 
-    guard let evaluated = Evaluator().eval(program, within: env) else {
-      return .failure(.evalError)
-    }
-
-    return .success(evaluated)
+    let evaluated = Evaluator().eval(program, within: env)
+    return evaluated
   }
 
 
@@ -341,10 +324,4 @@ final class EvaluatorTest: XCTestCase {
     }
     return false
   }
-}
-
-
-fileprivate enum TestError: String, Error {
-  case parseError = "`parseProgram()` failed to parse the input."
-  case evalError = "Unable to evaluate the parsed program."
 }

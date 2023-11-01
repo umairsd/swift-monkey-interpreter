@@ -5,9 +5,9 @@ import Foundation
 /// A type to represent return statements.
 public class ReturnObject: Object {
   /// The value being wrapped by the `ReturnValue` type.
-  public let value: Object?
+  public let value: Object
 
-  public init(value: Object?) {
+  public init(value: Object) {
     self.value = value
   }
 
@@ -18,9 +18,6 @@ public class ReturnObject: Object {
   }
 
   public func inspect() -> String {
-    if let v = value {
-      return v.inspect()
-    }
-    return ""
+    return value.inspect()
   }
 }

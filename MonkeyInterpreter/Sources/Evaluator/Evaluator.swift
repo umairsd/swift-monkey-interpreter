@@ -13,9 +13,9 @@ public struct Evaluator {
 
   public init() {}
 
-  public func eval(_ node: Node?, within environment: Environment) -> Object? {
+  public func eval(_ node: Node?, within environment: Environment) -> Object {
     guard let node = node else {
-      return nil
+      fatalError()
     }
 
     switch node {
@@ -60,9 +60,7 @@ public struct Evaluator {
       return FunctionObject(parameters: params, body: body, environment: environment)
 
     case let callExpr as CallExpression:
-      guard let functionObj = eval(callExpr.function, within: environment) else {
-        return nilError(for: callExpr)
-      }
+      let functionObj = eval(callExpr.function, within: environment)
       if isErrorObject(functionObj) {
         return functionObj
       }
@@ -73,8 +71,6 @@ public struct Evaluator {
         return arguments.first!
       }
       return applyFunctionObject(functionObj, to: arguments)
-
-
 
     case let prefixExpr as PrefixExpression:
       let right = eval(prefixExpr.rightExpression, within: environment)
@@ -105,8 +101,8 @@ public struct Evaluator {
   // MARK: - Evaluators
 
   
-  private func evalProgram(_ program: Program, within environment: Environment) -> Object? {
-    var result: Object?
+  private func evalProgram(_ program: Program, within environment: Environment) -> Object {
+    var result: Object = Ok()
 
     for statement in program.statements {
       result = eval(statement, within: environment)
@@ -126,17 +122,17 @@ public struct Evaluator {
   private func evalBlockStatement(
     _ blockStatement: BlockStatement,
     within environment: Environment
-  ) -> Object? {
+  ) -> Object {
 
-    var result: Object?
+    var result: Object = Ok()
 
     for statement in blockStatement.statements {
       result = eval(statement, within: environment)
       // Check the `type()` of each evaluation result. If it is `.returnValue`, simply return
       // the object without unwrapping its value, so it stops execution in a possible outer
       // block statement and bubbles up to `evalProgram()` where it finally gets unwrapped.
-      if let r = result, (r.type() == .return || r.type() == .error) {
-        return r
+      if (result.type() == .return || result.type() == .error) {
+        return result
       }
     }
     return result
@@ -146,11 +142,9 @@ public struct Evaluator {
   private func evalIfExpression(
     _ ifExpr: IfExpression,
     within environment: Environment
-  ) -> Object? {
+  ) -> Object {
 
-    guard let conditionObject = eval(ifExpr.condition, within: environment) else {
-      return newError(for: "Unable to parse the condition for if-expression.")
-    }
+    let conditionObject = eval(ifExpr.condition, within: environment)
     if isErrorObject(conditionObject) {
       return conditionObject
     }
@@ -168,12 +162,11 @@ public struct Evaluator {
   private func evalIdentifier(
     _ identifer: Identifier,
     within environment: Environment
-  ) -> Object? {
+  ) -> Object {
 
     guard let v = environment.getObject(for: identifer.value) else {
       return newError(for: "Identifier not found: \(identifer.value)")
     }
-
     return v
   }
 
@@ -185,9 +178,7 @@ public struct Evaluator {
 
     var result: [Object] = []
     for e in expressions {
-      guard let evaluated = eval(e, within: environment) else {
-        return [newError(for: "-- Expression \(e.toString()) evaluates to nil.")]
-      }
+      let evaluated = eval(e, within: environment)
       if isErrorObject(evaluated) {
         return [evaluated]
       }
@@ -197,7 +188,7 @@ public struct Evaluator {
   }
 
 
-  private func applyFunctionObject(_ obj: Object, to arguments: [Object]) -> Object? {
+  private func applyFunctionObject(_ obj: Object, to arguments: [Object]) -> Object {
     guard let functionObj = obj as? FunctionObject, functionObj.type() == .function else {
       return newError(for: "Not a function: \(obj.type())")
     }
@@ -328,7 +319,7 @@ public struct Evaluator {
 
   // MARK: - Helpers
 
-  private func unwrapReturnValue(_ obj: Object?) -> Object? {
+  private func unwrapReturnValue(_ obj: Object) -> Object {
     if let r = obj as? ReturnObject {
       return r.value
     }
@@ -360,18 +351,11 @@ public struct Evaluator {
 
   // MARK: - Errors
 
-  private func nilError(for e: Expression) -> ErrorObject {
-    return ErrorObject(message: "Expression \(e.toString()) evaluates to nil.")
-  }
-
   private func newError(for message: String) -> ErrorObject {
     return ErrorObject(message: message)
   }
 
-  private func isErrorObject(_ object: Object?) -> Bool {
-    if let o = object {
-      return o is ErrorObject
-    }
-    return false
+  private func isErrorObject(_ object: Object) -> Bool {
+    return object is ErrorObject
   }
 }

@@ -48,8 +48,10 @@ public struct MonkeyRepl {
         continue
       }
 
-      guard let evaluated = Evaluator().eval(program, within: env) else {
+      let evaluated = Evaluator().eval(program, within: env)
+      if let errorObj = evaluated as? ErrorObject {
         print("Error: Unable to evaluate the parsed program.")
+        print("  \(errorObj.message)")
         continue
       }
 
