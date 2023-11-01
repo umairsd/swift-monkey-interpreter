@@ -31,6 +31,9 @@ public struct Evaluator {
 
     case let returnStmt as ReturnStatement:
       let v = eval(returnStmt.returnValue)
+      if isError(v) {
+        return v
+      }
       return ReturnObject(value: v)
 
       // Expressions
@@ -42,18 +45,27 @@ public struct Evaluator {
 
     case let prefixExpr as PrefixExpression:
       let right = eval(prefixExpr.rightExpression)
+      if isError(right) {
+        return right
+      }
       return evalPrefixExpression(prefixExpr.prefixOperator, right)
 
     case let infixExpr as InfixExpression:
       let left = eval(infixExpr.leftExpression)
+      if isError(left) {
+        return left
+      }
       let right = eval(infixExpr.rightExpression)
+      if isError(right) {
+        return right
+      }
       return evalInfixExpression(infixExpr.infixOperator, leftObject: left, rightObject: right)
 
     case let ifExpr as IfExpression:
       return evalIfExpression(ifExpr)
 
     default:
-      return nil
+      return newError(for: "Nil node.")
     }
   }
 
@@ -62,11 +74,16 @@ public struct Evaluator {
   
   private func evalProgram(_ program: Program) -> Object? {
     var result: Object?
+
     for statement in program.statements {
       result = eval(statement)
-
-      if let returnValue = result as? ReturnObject {
-        return returnValue.value
+      switch result {
+      case let returnObject as ReturnObject:
+        return returnObject.value
+      case _ as ErrorObject:
+        return result
+      default:
+        continue
       }
     }
     return result
@@ -78,11 +95,10 @@ public struct Evaluator {
 
     for statement in blockStatement.statements {
       result = eval(statement)
-
       // Check the `type()` of each evaluation result. If it is `.returnValue`, simply return
       // the object without unwrapping its value, so it stops execution in a possible outer
       // block statement and bubbles up to `evalProgram()` where it finally gets unwrapped.
-      if let r = result, r.type() == .return {
+      if let r = result, (r.type() == .return || r.type() == .error) {
         return r
       }
     }
@@ -90,33 +106,12 @@ public struct Evaluator {
   }
 
 
-  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
-    guard let rightIntegerLiteral = right as? IntegerObject else {
-      return nullObject
-    }
-    let v = rightIntegerLiteral.value
-    return IntegerObject(value: -v)
-  }
-
-
-  private func evalBangOperatorExpression(_ right: Object?) -> Object {
-    guard let rightObject = right else {
-      return nullObject
-    }
-
-    if rightObject === trueObject {
-      return falseObject
-    } else if rightObject === falseObject {
-      return trueObject
-    } else {
-      return falseObject
-    }
-  }
-
-  
   private func evalIfExpression(_ ifExpr: IfExpression) -> Object? {
     guard let conditionObject = eval(ifExpr.condition) else {
-      return nullObject
+      return newError(for: "Unable to parse the condition for if-expression.")
+    }
+    if isError(conditionObject) {
+      return conditionObject
     }
 
     if isTruthy(conditionObject) {
@@ -137,6 +132,17 @@ public struct Evaluator {
     rightObject right: Object?
   ) -> Object {
 
+    guard let left = left, let right = right else {
+      fatalError("")
+    }
+    guard left.type() == right.type() else {
+      return newError(for: "Type mismatch: \(left.type()) \(infixOperator) \(right.type())")
+    }
+    guard type(of: left) == type(of: right) else {
+      return newError(
+        for: "Type mismatch: Objects types are different -  \(type(of: left)) \(type(of: right))")
+    }
+
     if let i1 = left as? IntegerObject, let i2 = right as? IntegerObject {
       return evalIntegerInfixExpression(infixOperator, leftInt: i1, rightInt: i2)
     }
@@ -149,7 +155,7 @@ public struct Evaluator {
       return booleanObjectFor(left !== right)
     }
 
-    return nullObject
+    return newError(for: "Unknown operator: \(left.type()) \(infixOperator) \(right.type())")
   }
 
 
@@ -188,7 +194,7 @@ public struct Evaluator {
       return booleanObjectFor(l != r)
 
     default:
-      return nullObject
+      return newError(for: "Unknown operator: \(leftInt.type()) \(infixOperator) \(leftInt.type())")
     }
   }
 
@@ -204,15 +210,56 @@ public struct Evaluator {
       return evalMinusPrefixOperatorExpression(rightObject)
 
     default:
-      return nullObject
+      return ErrorObject(message: "Unknown operator: \(prefixOperator)")
+    }
+  }
+
+
+  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
+    guard let rightObject = right else {
+      fatalError("\(#function) Unexpected nil for the right expression in a prefix expression.")
+    }
+    guard let integerLiteral = rightObject as? IntegerObject, rightObject.type() == .integer else {
+      return newError(for: "Unknown operator: -\(rightObject.type())")
+    }
+
+    return IntegerObject(value: -integerLiteral.value)
+  }
+
+
+  private func evalBangOperatorExpression(_ right: Object?) -> Object {
+    guard let rightObject = right else {
+      fatalError("\(#function) Unexpected nil for the right expression in a prefix expression.")
+    }
+
+    if rightObject === trueObject {
+      return falseObject
+    } else if rightObject === falseObject {
+      return trueObject
+    } else {
+      return falseObject
     }
   }
 
 
   // MARK: - Helpers
 
+  
+  private func isError(_ object: Object?) -> Bool {
+    if let o = object {
+      return o is ErrorObject
+    }
+    return false
+  }
+
+
   private func booleanObjectFor(_ condition: Bool) -> BooleanObject {
     condition ? trueObject : falseObject
+  }
+
+
+  private func newError(for message: String) -> ErrorObject {
+    return ErrorObject(message: message)
   }
 
 
@@ -222,4 +269,5 @@ public struct Evaluator {
     }
     return true
   }
+
 }

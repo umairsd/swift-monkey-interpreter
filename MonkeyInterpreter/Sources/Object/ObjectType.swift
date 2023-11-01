@@ -9,4 +9,5 @@ public enum ObjectType {
   case boolean
   case null
   case `return`
+  case error
 }

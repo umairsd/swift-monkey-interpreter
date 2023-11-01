@@ -162,6 +162,43 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  func testErrorHandling() throws {
+    let tests: [(input: String, expectedMessage: String)] = [
+      ( "5 + true;", "Type mismatch: integer + boolean"),
+      ( "5 + true; 5;", "Type mismatch: integer + boolean"),
+      ( "-true", "Unknown operator: -boolean"),
+      ( "true + false;", "Unknown operator: boolean + boolean"),
+      ( "5; true + false; 5", "Unknown operator: boolean + boolean"),
+      ( "if (10 > 1) { true + false; }", "Unknown operator: boolean + boolean"),
+      ("""
+       if (10 > 1) {
+         if (10 > 1) {
+           return true + false;
+         }
+         return 1;
+       }
+       """, "Unknown operator: boolean + boolean")
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        guard let errorObj = obj as? ErrorObject else {
+          XCTFail("No error object returned. Got=\(type(of: obj))")
+          return
+        }
+
+        XCTAssertEqual(errorObj.message, testCase.expectedMessage)
+      }
+    }
+
+  }
+
+
   // MARK: - Validators
 
 
