@@ -3,6 +3,7 @@
 import Foundation
 import Evaluator
 import Lexer
+import Object
 import Parser
 
 /// A simple REPL for the Monkey programming language.
@@ -27,6 +28,8 @@ public struct MonkeyRepl {
   public func start() {
     print(Self.prompt, terminator: "")
 
+    let env = Environment()
+
     while let line = readLine() {
       defer {
         print(Self.prompt, terminator: "")
@@ -45,7 +48,7 @@ public struct MonkeyRepl {
         continue
       }
 
-      guard let evaluated = Evaluator().eval(program) else {
+      guard let evaluated = Evaluator().eval(program, within: env) else {
         print("Error: Unable to evaluate the parsed program.")
         continue
       }

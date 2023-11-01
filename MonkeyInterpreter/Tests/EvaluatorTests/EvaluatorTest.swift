@@ -177,7 +177,7 @@ final class EvaluatorTest: XCTestCase {
          }
          return 1;
        }
-       """, "Unknown operator: boolean + boolean")
+       """, "Unknown operator: boolean + boolean"),
     ]
 
     for testCase in tests {
@@ -241,12 +241,13 @@ final class EvaluatorTest: XCTestCase {
   private func runEval(_ input: String) -> Result<Object, TestError> {
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
+    let env = Environment()
 
     guard let program = parser.parseProgram(), !checkParserErrors(parser) else {
       return .failure(.parseError)
     }
 
-    guard let evaluated = Evaluator().eval(program) else {
+    guard let evaluated = Evaluator().eval(program, within: env) else {
       return .failure(.evalError)
     }
 

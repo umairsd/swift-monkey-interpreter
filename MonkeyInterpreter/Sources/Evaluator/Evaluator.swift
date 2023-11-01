@@ -13,7 +13,7 @@ public struct Evaluator {
 
   public init() {}
 
-  public func eval(_ node: Node?) -> Object? {
+  public func eval(_ node: Node?, within environment: Environment) -> Object? {
     guard let node = node else {
       return nil
     }
@@ -21,16 +21,16 @@ public struct Evaluator {
     switch node {
       // Statements
     case let p as Program:
-      return evalProgram(p)
+      return evalProgram(p, within: environment)
 
     case let exprStmt as ExpressionStatement:
-      return eval(exprStmt.expression)
+      return eval(exprStmt.expression, within: environment)
 
     case let blockStmt as BlockStatement:
-      return evalBlockStatement(blockStmt)
+      return evalBlockStatement(blockStmt, within: environment)
 
     case let returnStmt as ReturnStatement:
-      let v = eval(returnStmt.returnValue)
+      let v = eval(returnStmt.returnValue, within: environment)
       if isError(v) {
         return v
       }
@@ -44,25 +44,25 @@ public struct Evaluator {
       return booleanLiteral.value ? trueObject : falseObject
 
     case let prefixExpr as PrefixExpression:
-      let right = eval(prefixExpr.rightExpression)
+      let right = eval(prefixExpr.rightExpression, within: environment)
       if isError(right) {
         return right
       }
       return evalPrefixExpression(prefixExpr.prefixOperator, right)
 
     case let infixExpr as InfixExpression:
-      let left = eval(infixExpr.leftExpression)
+      let left = eval(infixExpr.leftExpression, within: environment)
       if isError(left) {
         return left
       }
-      let right = eval(infixExpr.rightExpression)
+      let right = eval(infixExpr.rightExpression, within: environment)
       if isError(right) {
         return right
       }
       return evalInfixExpression(infixExpr.infixOperator, leftObject: left, rightObject: right)
 
     case let ifExpr as IfExpression:
-      return evalIfExpression(ifExpr)
+      return evalIfExpression(ifExpr, within: environment)
 
     default:
       return newError(for: "Nil node.")
@@ -72,11 +72,11 @@ public struct Evaluator {
   // MARK: - Evaluators
 
   
-  private func evalProgram(_ program: Program) -> Object? {
+  private func evalProgram(_ program: Program, within environment: Environment) -> Object? {
     var result: Object?
 
     for statement in program.statements {
-      result = eval(statement)
+      result = eval(statement, within: environment)
       switch result {
       case let returnObject as ReturnObject:
         return returnObject.value
@@ -90,11 +90,15 @@ public struct Evaluator {
   }
 
 
-  private func evalBlockStatement(_ blockStatement: BlockStatement) -> Object? {
+  private func evalBlockStatement(
+    _ blockStatement: BlockStatement,
+    within environment: Environment
+  ) -> Object? {
+
     var result: Object?
 
     for statement in blockStatement.statements {
-      result = eval(statement)
+      result = eval(statement, within: environment)
       // Check the `type()` of each evaluation result. If it is `.returnValue`, simply return
       // the object without unwrapping its value, so it stops execution in a possible outer
       // block statement and bubbles up to `evalProgram()` where it finally gets unwrapped.
@@ -106,8 +110,12 @@ public struct Evaluator {
   }
 
 
-  private func evalIfExpression(_ ifExpr: IfExpression) -> Object? {
-    guard let conditionObject = eval(ifExpr.condition) else {
+  private func evalIfExpression(
+    _ ifExpr: IfExpression,
+    within environment: Environment
+  ) -> Object? {
+
+    guard let conditionObject = eval(ifExpr.condition, within: environment) else {
       return newError(for: "Unable to parse the condition for if-expression.")
     }
     if isError(conditionObject) {
@@ -115,9 +123,9 @@ public struct Evaluator {
     }
 
     if isTruthy(conditionObject) {
-      return eval(ifExpr.consequence)
+      return eval(ifExpr.consequence, within: environment)
     } else if let alternative = ifExpr.alternative {
-      return eval(alternative)
+      return eval(alternative, within: environment)
     } else {
       return nullObject
     }
