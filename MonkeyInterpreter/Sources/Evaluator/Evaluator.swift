@@ -54,6 +54,13 @@ public struct Evaluator {
     case let identifer as Identifier:
       return evalIdentifier(identifer, within: environment)
 
+
+    case let functionLiteral as FunctionLiteral:
+      let params = functionLiteral.parameters
+      let body = functionLiteral.body
+      return FunctionObject(parameters: params, body: body, environment: environment)
+
+
     case let prefixExpr as PrefixExpression:
       let right = eval(prefixExpr.rightExpression, within: environment)
       if isError(right) {

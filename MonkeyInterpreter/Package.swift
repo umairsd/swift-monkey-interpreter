@@ -33,7 +33,7 @@ let package = Package(
     ),
     .target(
       name: "Object",
-      dependencies: []
+      dependencies: ["AST"]
     ),
     .target(
       name: "Repl",

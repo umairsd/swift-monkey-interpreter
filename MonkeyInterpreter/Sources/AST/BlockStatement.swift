@@ -22,11 +22,7 @@ public class BlockStatement: Statement {
   public let token: Token // The { token
 
   public func toString() -> String {
-    var result = "{"
-    result += "\n"
-    result += statements.map { $0.toString() }.joined(separator: "\n")
-    result += "\n"
-    result += "}"
+    let result = statements.map { $0.toString() }.joined(separator: "\n")
     return result
   }
 }

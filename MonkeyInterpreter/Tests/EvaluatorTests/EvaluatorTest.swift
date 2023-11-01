@@ -221,7 +221,36 @@ final class EvaluatorTest: XCTestCase {
         XCTAssertEqual(errorObj.message, testCase.expectedMessage)
       }
     }
+  }
 
+
+  func testFunctionObject() throws {
+    let input = "fn(x) { x + 2; }"
+
+    let evaluated = runEval(input)
+    switch evaluated {
+    case .failure(let errorMsg):
+      XCTFail(errorMsg.rawValue)
+
+    case .success(let obj):
+      guard let functionObject = obj as? FunctionObject else {
+        XCTFail("No function object returned. Got=\(type(of: obj))")
+        return
+      }
+
+      XCTAssertEqual(
+        functionObject.parameters.count,
+        1,
+        "Function has wrong parameters. Got=\(functionObject.parameters)")
+
+      XCTAssertEqual(
+        functionObject.parameters[0].toString(),
+        "x",
+        "Parameter is not `x`. Got=\(functionObject.parameters[0].toString())")
+
+      let expectedBody = "(x + 2)"
+      XCTAssertEqual(functionObject.body.toString(), expectedBody)
+    }
   }
 
 
