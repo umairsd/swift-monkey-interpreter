@@ -2,8 +2,8 @@
 
 import Foundation
 
-/// A type that wraps integer values.
-public class Null: Object {
+/// A type to represent `null` values.
+public class NullObject: Object {
 
   public init() {}
 

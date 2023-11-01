@@ -3,17 +3,18 @@
 import Foundation
 
 /// A type that wraps integer values.
-public class Boolean: Object {
-  public let value: Bool
+public class IntegerObject: Object {
+  /// The value being wrapped by the `Integer` type.
+  public let value: Int
 
-  public init(value: Bool) {
+  public init(value: Int) {
     self.value = value
   }
 
   // MARK: - Protocol (Object)
 
   public func type() -> ObjectType {
-    .boolean
+    .integer
   }
 
   public func inspect() -> String {

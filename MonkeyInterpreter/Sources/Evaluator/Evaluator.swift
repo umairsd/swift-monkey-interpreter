@@ -7,9 +7,9 @@ import Token
 
 public struct Evaluator {
 
-  private let nullObject = Null()
-  private let trueObject = Boolean(value: true)
-  private let falseObject = Boolean(value: false)
+  private let nullObject = NullObject()
+  private let trueObject = BooleanObject(value: true)
+  private let falseObject = BooleanObject(value: false)
 
   public init() {}
 
@@ -31,11 +31,11 @@ public struct Evaluator {
 
     case let returnStmt as ReturnStatement:
       let v = eval(returnStmt.returnValue)
-      return ReturnValue(value: v)
+      return ReturnObject(value: v)
 
       // Expressions
     case let intLiteral as IntegerLiteral:
-      return Integer(value: intLiteral.value)
+      return IntegerObject(value: intLiteral.value)
 
     case let booleanLiteral as BooleanLiteral:
       return booleanLiteral.value ? trueObject : falseObject
@@ -65,7 +65,7 @@ public struct Evaluator {
     for statement in program.statements {
       result = eval(statement)
 
-      if let returnValue = result as? ReturnValue {
+      if let returnValue = result as? ReturnObject {
         return returnValue.value
       }
     }
@@ -82,7 +82,7 @@ public struct Evaluator {
       // Check the `type()` of each evaluation result. If it is `.returnValue`, simply return
       // the object without unwrapping its value, so it stops execution in a possible outer
       // block statement and bubbles up to `evalProgram()` where it finally gets unwrapped.
-      if let r = result, r.type() == .returnValue {
+      if let r = result, r.type() == .return {
         return r
       }
     }
@@ -91,11 +91,11 @@ public struct Evaluator {
 
 
   private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
-    guard let rightIntegerLiteral = right as? Integer else {
+    guard let rightIntegerLiteral = right as? IntegerObject else {
       return nullObject
     }
     let v = rightIntegerLiteral.value
-    return Integer(value: -v)
+    return IntegerObject(value: -v)
   }
 
 
@@ -137,7 +137,7 @@ public struct Evaluator {
     rightObject right: Object?
   ) -> Object {
 
-    if let i1 = left as? Integer, let i2 = right as? Integer {
+    if let i1 = left as? IntegerObject, let i2 = right as? IntegerObject {
       return evalIntegerInfixExpression(infixOperator, leftInt: i1, rightInt: i2)
     }
 
@@ -155,8 +155,8 @@ public struct Evaluator {
 
   private func evalIntegerInfixExpression(
     _ infixOperator: String,
-    leftInt: Integer,
-    rightInt: Integer
+    leftInt: IntegerObject,
+    rightInt: IntegerObject
   ) -> Object {
 
     let l = leftInt.value
@@ -164,16 +164,16 @@ public struct Evaluator {
 
     switch infixOperator {
     case "+":
-      return Integer(value: l + r)
+      return IntegerObject(value: l + r)
 
     case "-":
-      return Integer(value: l - r)
+      return IntegerObject(value: l - r)
 
     case "*":
-      return Integer(value: l * r)
+      return IntegerObject(value: l * r)
 
     case "/":
-      return Integer(value: l / r)
+      return IntegerObject(value: l / r)
 
     case "<":
       return booleanObjectFor(l < r)
@@ -211,7 +211,7 @@ public struct Evaluator {
 
   // MARK: - Helpers
 
-  private func booleanObjectFor(_ condition: Bool) -> Boolean {
+  private func booleanObjectFor(_ condition: Bool) -> BooleanObject {
     condition ? trueObject : falseObject
   }
 

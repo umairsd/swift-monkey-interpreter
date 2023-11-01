@@ -2,7 +2,8 @@
 
 import Foundation
 
-public class ReturnValue: Object {
+/// A type to represent return statements.
+public class ReturnObject: Object {
   /// The value being wrapped by the `ReturnValue` type.
   public let value: Object?
 
@@ -13,7 +14,7 @@ public class ReturnValue: Object {
   // MARK: - Protocol (Object)
 
   public func type() -> ObjectType {
-    .returnValue
+    .return
   }
 
   public func inspect() -> String {

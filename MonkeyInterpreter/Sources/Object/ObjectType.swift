@@ -8,5 +8,5 @@ public enum ObjectType {
   case integer
   case boolean
   case null
-  case returnValue
+  case `return`
 }

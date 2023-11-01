@@ -166,7 +166,7 @@ final class EvaluatorTest: XCTestCase {
 
 
   private func validateNullObject(_ obj: Object) throws {
-    guard let _ = obj as? Null else {
+    guard let _ = obj as? NullObject else {
       XCTFail("object is not `Null`. Got=\(obj)")
       return
     }
@@ -174,7 +174,7 @@ final class EvaluatorTest: XCTestCase {
 
 
   private func validateBooleanObject(_ obj: Object, expected: Bool) throws {
-    guard let result = obj as? Boolean else {
+    guard let result = obj as? BooleanObject else {
       XCTFail("object is not `Boolean`. Got=\(obj)")
       return
     }
@@ -187,7 +187,7 @@ final class EvaluatorTest: XCTestCase {
 
 
   private func validateIntegerObject(_ obj: Object, expected: Int) throws {
-    guard let result = obj as? Integer else {
+    guard let result = obj as? IntegerObject else {
       XCTFail("object is not `Integer`. Got=\(obj)")
       return
     }
