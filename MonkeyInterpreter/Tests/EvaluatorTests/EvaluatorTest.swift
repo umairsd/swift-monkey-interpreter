@@ -99,7 +99,47 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  func testIfElseExpression() throws {
+    let tests: [(input: String, expected: Any?)] = [
+      ("if (true) { 10 }", 10),
+      ("if (false) { 10 }", nil),
+      ("if (1) { 10 }", 10),
+      ("if (1 < 2) { 10 }", 10),
+      ("if (1 > 2) { 10 }", nil),
+      ("if (1 > 2) { 10 } else { 20 }", 20),
+      ("if (1 < 2) { 10 } else { 20 }", 10),
+      ("if (5 * 5 + 10 > 34) { 99 } else { 100 }", 99),
+      ("if ((1000 / 2) + 250 * 2 == 1000) { 9999 }", 9999),
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        switch testCase.expected {
+        case let expectedInt as Int:
+          try validateIntegerObject(obj, expected: expectedInt)
+        default:
+          try validateNullObject(obj)
+        }
+      }
+    }
+  }
+
+
   // MARK: - Validators
+
+
+  private func validateNullObject(_ obj: Object) throws {
+    guard let _ = obj as? Null else {
+      XCTFail("object is not `Null`. Got=\(obj)")
+      return
+    }
+  }
+
 
   private func validateBooleanObject(_ obj: Object, expected: Bool) throws {
     guard let result = obj as? Boolean else {

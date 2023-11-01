@@ -26,6 +26,9 @@ public struct Evaluator {
     case let exprStmt as ExpressionStatement:
       return eval(exprStmt.expression)
 
+    case let blockStmt as BlockStatement:
+      return evalStatements(stmts: blockStmt.statements)
+
       // Expressions
     case let intLiteral as IntegerLiteral:
       return Integer(value: intLiteral.value)
@@ -42,12 +45,15 @@ public struct Evaluator {
       let right = eval(infixExpr.rightExpression)
       return evalInfixExpression(infixExpr.infixOperator, leftObject: left, rightObject: right)
 
+    case let ifExpr as IfExpression:
+      return evalIfExpression(ifExpr)
+
     default:
       return nil
     }
   }
 
-  // MARK: - Private
+  // MARK: - Evaluators
 
   
   private func evalStatements(stmts: [Statement]) -> Object? {
@@ -58,9 +64,46 @@ public struct Evaluator {
     return result
   }
 
+  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
+    guard let rightIntegerLiteral = right as? Integer else {
+      return nullObject
+    }
+    let v = rightIntegerLiteral.value
+    return Integer(value: -v)
+  }
 
-  // MARK: Private (Infix)
 
+  private func evalBangOperatorExpression(_ right: Object?) -> Object {
+    guard let rightObject = right else {
+      return nullObject
+    }
+
+    if rightObject === trueObject {
+      return falseObject
+    } else if rightObject === falseObject {
+      return trueObject
+    } else {
+      return falseObject
+    }
+  }
+
+  
+  private func evalIfExpression(_ ifExpr: IfExpression) -> Object? {
+    guard let conditionObject = eval(ifExpr.condition) else {
+      return nullObject
+    }
+
+    if isTruthy(conditionObject) {
+      return eval(ifExpr.consequence)
+    } else if let alternative = ifExpr.alternative {
+      return eval(alternative)
+    } else {
+      return nullObject
+    }
+  }
+
+
+  // MARK: Evaluators (Infix)
 
   private func evalInfixExpression(
     _ infixOperator: String,
@@ -124,7 +167,7 @@ public struct Evaluator {
   }
 
 
-  // MARK: Private (Prefix)
+  // MARK: Evaluators (Prefix)
 
   private func evalPrefixExpression(_ prefixOperator: String, _ rightObject: Object?) -> Object {
     switch prefixOperator {
@@ -140,31 +183,17 @@ public struct Evaluator {
   }
 
 
-  private func evalMinusPrefixOperatorExpression(_ right: Object?) -> Object {
-    guard let rightIntegerLiteral = right as? Integer else {
-      return nullObject
-    }
-    let v = rightIntegerLiteral.value
-    return Integer(value: -v)
-  }
-
-
-  private func evalBangOperatorExpression(_ right: Object?) -> Object {
-    guard let rightObject = right else {
-      return nullObject
-    }
-
-    if rightObject === trueObject {
-      return falseObject
-    } else if rightObject === falseObject {
-      return trueObject
-    } else {
-      return falseObject
-    }
-  }
-
+  // MARK: - Helpers
 
   private func booleanObjectFor(_ condition: Bool) -> Boolean {
     condition ? trueObject : falseObject
+  }
+
+
+  private func isTruthy(_ object: Object) -> Bool {
+    if object === nullObject || object === falseObject {
+      return false
+    }
+    return true
   }
 }
