@@ -8,6 +8,31 @@ import Parser
 
 final class EvaluatorTest: XCTestCase {
 
+
+  func testRepl() throws {
+    let tests: [(input: String, expected: Int)] = [
+      ("""
+      let a = 5;
+      let c = a * 99;
+      let d = if (c > a) { 99 } else { 100 };
+      return d;
+      """, 
+       99),
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        try validateIntegerObject(obj, expected: testCase.expected)
+      }
+    }
+  }
+
+
   func testEvalIntegerExpression() throws {
     let tests: [(input: String, expected: Int)] = [
       ("5", 5),
