@@ -226,7 +226,6 @@ final class EvaluatorTest: XCTestCase {
 
   func testFunctionObject() throws {
     let input = "fn(x) { x + 2; }"
-
     let evaluated = runEval(input)
     switch evaluated {
     case .failure(let errorMsg):
@@ -250,6 +249,29 @@ final class EvaluatorTest: XCTestCase {
 
       let expectedBody = "(x + 2)"
       XCTAssertEqual(functionObject.body.toString(), expectedBody)
+    }
+  }
+
+
+  func testFunctionApplication() throws {
+    let tests: [(input: String, expected: Int)] = [
+      ("let identity = fn(x) { x; }; identity(5);", 5),
+      ("let identity = fn(x) { return x; }; identity(5);", 5),
+      ("let double = fn(x) { x * 2; }; double(5);", 10),
+      ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+      ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+      ("fn(x) { x; }(5)", 5),
+    ]
+
+    for testCase in tests {
+      let evalResult = runEval(testCase.input)
+      switch evalResult {
+      case .failure(let errorMsg):
+        XCTFail(errorMsg.rawValue)
+
+      case .success(let obj):
+        try validateIntegerObject(obj, expected: testCase.expected)
+      }
     }
   }
 

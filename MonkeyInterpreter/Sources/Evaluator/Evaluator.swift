@@ -31,14 +31,14 @@ public struct Evaluator {
 
     case let returnStmt as ReturnStatement:
       let v = eval(returnStmt.returnValue, within: environment)
-      if isError(v) {
+      if isErrorObject(v) {
         return v
       }
       return ReturnObject(value: v)
 
     case let letStmt as LetStatement:
       let v = eval(letStmt.value, within: environment)
-      if isError(v) {
+      if isErrorObject(v) {
         return v
       }
       environment.setObject(for: letStmt.name.value, v)
@@ -54,27 +54,42 @@ public struct Evaluator {
     case let identifer as Identifier:
       return evalIdentifier(identifer, within: environment)
 
-
     case let functionLiteral as FunctionLiteral:
       let params = functionLiteral.parameters
       let body = functionLiteral.body
       return FunctionObject(parameters: params, body: body, environment: environment)
 
+    case let callExpr as CallExpression:
+      guard let functionObj = eval(callExpr.function, within: environment) else {
+        return nilError(for: callExpr)
+      }
+      if isErrorObject(functionObj) {
+        return functionObj
+      }
+      // Evaluate each of the arguments, to resolve their values. e.g. call(3 + 5) means
+      // 3 + 5 needs to be resolved and evaluated to 8
+      let arguments = evalExpressions(callExpr.arguments, within: environment)
+      if arguments.count == 1 && isErrorObject(arguments.first!) {
+        return arguments.first!
+      }
+      return applyFunctionObject(functionObj, to: arguments)
+
+
 
     case let prefixExpr as PrefixExpression:
       let right = eval(prefixExpr.rightExpression, within: environment)
-      if isError(right) {
+      if isErrorObject(right) {
         return right
       }
       return evalPrefixExpression(prefixExpr.prefixOperator, right)
 
     case let infixExpr as InfixExpression:
       let left = eval(infixExpr.leftExpression, within: environment)
-      if isError(left) {
+      if isErrorObject(left) {
         return left
       }
       let right = eval(infixExpr.rightExpression, within: environment)
-      if isError(right) {
+      if isErrorObject(right) {
         return right
       }
       return evalInfixExpression(infixExpr.infixOperator, leftObject: left, rightObject: right)
@@ -136,7 +151,7 @@ public struct Evaluator {
     guard let conditionObject = eval(ifExpr.condition, within: environment) else {
       return newError(for: "Unable to parse the condition for if-expression.")
     }
-    if isError(conditionObject) {
+    if isErrorObject(conditionObject) {
       return conditionObject
     }
 
@@ -160,6 +175,36 @@ public struct Evaluator {
     }
 
     return v
+  }
+
+
+  private func evalExpressions(
+    _ expressions: [Expression],
+    within environment: Environment
+  ) -> [Object] {
+
+    var result: [Object] = []
+    for e in expressions {
+      guard let evaluated = eval(e, within: environment) else {
+        return [newError(for: "-- Expression \(e.toString()) evaluates to nil.")]
+      }
+      if isErrorObject(evaluated) {
+        return [evaluated]
+      }
+      result.append(evaluated)
+    }
+    return result
+  }
+
+
+  private func applyFunctionObject(_ obj: Object, to arguments: [Object]) -> Object? {
+    guard let functionObj = obj as? FunctionObject, functionObj.type() == .function else {
+      return newError(for: "Not a function: \(obj.type())")
+    }
+
+    let extendedEnv = extendFunctionEnvironment(functionObj, arguments: arguments)
+    let evaluated = eval(functionObj.body, within: extendedEnv)
+    return unwrapReturnValue(evaluated)
   }
 
 
@@ -283,22 +328,25 @@ public struct Evaluator {
 
   // MARK: - Helpers
 
-  
-  private func isError(_ object: Object?) -> Bool {
-    if let o = object {
-      return o is ErrorObject
+  private func unwrapReturnValue(_ obj: Object?) -> Object? {
+    if let r = obj as? ReturnObject {
+      return r.value
     }
-    return false
+    return obj
+  }
+
+
+  private func extendFunctionEnvironment(_ fn: FunctionObject, arguments: [Object]) -> Environment {
+    let env = Environment.newClosedEnvironment(from: fn.environment)
+    for (paramIdx, param) in fn.parameters.enumerated() {
+      env.setObject(for: param.value, arguments[paramIdx])
+    }
+    return env
   }
 
 
   private func booleanObjectFor(_ condition: Bool) -> BooleanObject {
     condition ? trueObject : falseObject
-  }
-
-
-  private func newError(for message: String) -> ErrorObject {
-    return ErrorObject(message: message)
   }
 
 
@@ -308,5 +356,22 @@ public struct Evaluator {
     }
     return true
   }
+  
 
+  // MARK: - Errors
+
+  private func nilError(for e: Expression) -> ErrorObject {
+    return ErrorObject(message: "Expression \(e.toString()) evaluates to nil.")
+  }
+
+  private func newError(for message: String) -> ErrorObject {
+    return ErrorObject(message: message)
+  }
+
+  private func isErrorObject(_ object: Object?) -> Bool {
+    if let o = object {
+      return o is ErrorObject
+    }
+    return false
+  }
 }
