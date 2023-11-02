@@ -52,6 +52,7 @@ public class Parser {
     registerPrefix(for: .if, fn: parseIfExpression)
     registerPrefix(for: .function, fn: parseFunctionLiteral)
     registerPrefix(for: .lBracket, fn: parseArrayLiteral)
+    registerPrefix(for: .lBrace, fn: parseHashLiteral)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -102,6 +103,46 @@ public class Parser {
     let t = currentToken
     let elements = parseExpressionList(startingAt: .lBracket, terminatingAt: .rBracket)
     return ArrayLiteral(token: t, elements: elements)
+  }
+
+
+  private func parseHashLiteral() -> HashLiteral? {
+    guard currentTokenIs(.lBrace) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken
+    var pairs: [HashEntity] = []
+
+    while !peekTokenIs(.rBrace) {
+      incrementTokens()
+      guard let key = parseExpression(withPrecedence: .lowest) else {
+        errors.append("\(#function): Unable to parse the expression for key.")
+        return nil
+      }
+      guard expectPeekAndIncrement(.colon) else {
+        return nil
+      }
+
+      incrementTokens()
+      guard let value = parseExpression(withPrecedence: .lowest) else {
+        errors.append("\(#function): Unable to parse the expression for value.")
+        return nil
+      }
+
+      pairs.append(HashEntity(key: key, value: value))
+
+      if !peekTokenIs(.rBrace) && !expectPeekAndIncrement(.comma) {
+        return nil
+      }
+    }
+
+    if !expectPeekAndIncrement(.rBrace) {
+      return nil
+    }
+
+    return HashLiteral(token: t, pairs: pairs)
   }
 
 

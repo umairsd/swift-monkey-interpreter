@@ -221,6 +221,126 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testHashLiteral_Empty() throws {
+    let input = "{}"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+      return
+    }
+
+    XCTAssertEqual(hashLiteral.pairs.count, 0)
+  }
+
+
+  func testHashLiteral_StringKeys() throws {
+    let input = "{\"one\": 1, \"two\": 2, \"three\": 3}"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram(), !checkParserErrors(parser) else {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+    XCTAssertEqual(program.statements.count, 1)
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+      return
+    }
+
+    XCTAssertEqual(hashLiteral.pairs.count, 3)
+
+    let expected = [
+      "one": 1,
+      "two": 2,
+      "three": 3
+    ]
+
+    for pair in hashLiteral.pairs {
+      guard let key = pair.key as? StringLiteral else {
+        XCTFail("Key is not of type `StringLiteral`. Got=\(pair.key)")
+        continue
+      }
+      guard let expectedValue = expected[key.toString()] else {
+        XCTFail("The fetched key does not have an expected value.")
+        continue
+      }
+
+      let value = pair.value
+      try validateIntegerLiteral(value, expectedValue: expectedValue)
+    }
+  }
+
+
+  func testHashLiterals_withExpressions() throws {
+    let input = "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram(), !checkParserErrors(parser) else {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+    XCTAssertEqual(program.statements.count, 1)
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+      return
+    }
+
+    XCTAssertEqual(hashLiteral.pairs.count, 3)
+
+    let testFuncs: [String: (Expression) throws -> Void] = [
+      "one": { e in
+        try self.validateInfixExpression(e, leftValue: 0, operator: "+", rightValue: 1)
+      },
+      "two": { e in
+        try self.validateInfixExpression(e, leftValue: 10, operator: "-", rightValue: 8)
+      },
+      "three": { e in
+        try self.validateInfixExpression(e, leftValue: 15, operator: "/", rightValue: 5)
+      }
+    ]
+
+    for pair in hashLiteral.pairs {
+      guard let key = pair.key as? StringLiteral else {
+        XCTFail("Key is not of type `StringLiteral`. Got=\(pair.key)")
+        continue
+      }
+
+      guard let testFunc: (Expression) throws -> Void = testFuncs[key.toString()] else {
+        XCTFail("The key does not have a corresponding test function.")
+        continue
+      }
+
+      try testFunc(pair.value)
+    }
+  }
+
+
   // MARK: - Expressions
 
 
