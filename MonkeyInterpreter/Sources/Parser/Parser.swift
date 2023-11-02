@@ -43,6 +43,7 @@ public class Parser {
     // when we encounter a token of the given type.
     registerPrefix(for: .ident, fn: parseIdentifer)
     registerPrefix(for: .int, fn: parseIntegerLiteral)
+    registerPrefix(for: .string, fn: parseStringLiteral)
     registerPrefix(for: .bang, fn: parsePrefixExpression)
     registerPrefix(for: .minus, fn: parsePrefixExpression)
     registerPrefix(for: .true, fn: parseBoolean)
@@ -372,6 +373,18 @@ public class Parser {
       fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
     }
     return IntegerLiteral(token: self.currentToken, value: intValue)
+  }
+
+
+  /// Parses a `StringLiteral` starting from the current token.
+  private func parseStringLiteral() -> StringLiteral? {
+    guard currentTokenIs(.string) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let strValue = currentToken.literal
+    return StringLiteral(token: self.currentToken, value: strValue)
   }
 
 

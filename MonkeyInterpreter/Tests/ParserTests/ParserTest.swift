@@ -7,6 +7,8 @@ import AST
 
 final class ParserTest: XCTestCase {
 
+  // MARK: - Statements
+
   func testLetStatement() throws {
     let tests: [(input: String, expectedIdentifier: String, expectedValue: Any)] = [
       ("let x = 5;", "x", 5),
@@ -69,6 +71,118 @@ final class ParserTest: XCTestCase {
   }
 
 
+  // MARK: - Literals
+
+  func testIntegerLiteral() throws {
+    let input = "5;"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let expression = expressionStmt.expression as? IntegerLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `IntegerLiteral`.")
+      return
+    }
+
+    try validateIntegerLiteral(expression, expectedValue: 5)
+  }
+
+
+  func testStringLiteral() throws {
+    let tests: [(input: String, expectedValue: String)] = [
+      ("\"foobar\"", "foobar"),
+      ("\"foo bar\"", "foo bar"),
+      ("\"foo bar         \"", "foo bar         "),
+      ("\"12320\"", "12320"),
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      if checkParserErrors(parser) {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+
+      XCTAssertEqual(program.statements.count, 1)
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
+        return
+      }
+      guard let str = expressionStmt.expression as? StringLiteral else {
+        XCTFail("expressionStatement.expression is not of the type `StringLiteral`.")
+        return
+      }
+
+      XCTAssertEqual(
+        str.value,
+        testCase.expectedValue,
+        "string.value not \(testCase.expectedValue). Got=\(str.value)")
+    }
+  }
+
+
+  func testBooleanLiteral() throws {
+    let tests: [(input: String, expectedValue: Bool)] = [
+      ("true", true),
+      ("false", false)
+    ]
+
+    for testCase in tests {
+      let lexer = Lexer(input: testCase.input)
+      let parser = Parser(lexer: lexer)
+
+      guard let program = parser.parseProgram() else {
+        XCTFail("`parseProgram()` failed to parse the input.")
+        return
+      }
+      if checkParserErrors(parser) {
+        XCTFail("Test failed due to preceding parser errors.")
+        return
+      }
+
+      XCTAssertEqual(program.statements.count, 1)
+
+      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+        XCTFail("statement is not of the type `ExpressionStatement`.")
+        return
+      }
+      guard let boolean = expressionStmt.expression as? BooleanLiteral else {
+        XCTFail("expressionStatement.expression is not of the type `Boolean`.")
+        return
+      }
+
+      XCTAssertEqual(
+        boolean.value,
+        testCase.expectedValue,
+        "boolean.value not \(testCase.expectedValue). Got=\(boolean.value)")
+    }
+  }
+
+
+  // MARK: - Expressions
+
+
   func testIdentifierExpression() throws {
     let input = "foobar;"
     let lexer = Lexer(input: input)
@@ -102,35 +216,6 @@ final class ParserTest: XCTestCase {
       expressionIdentifer.tokenLiteral(),
       "foobar",
       "expressionIdentifer.tokenLiteral() not \("foobar"). Got=\(expressionIdentifer.tokenLiteral())")
-  }
-
-
-  func testIntegerLiteral() throws {
-    let input = "5;"
-    let lexer = Lexer(input: input)
-    let parser = Parser(lexer: lexer)
-
-    guard let program = parser.parseProgram() else {
-      XCTFail("`parseProgram()` failed to parse the input.")
-      return
-    }
-    if checkParserErrors(parser) {
-      XCTFail("Test failed due to preceding parser errors.")
-      return
-    }
-
-    XCTAssertEqual(program.statements.count, 1)
-
-    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
-      XCTFail("statement is not of the type `ExpressionStatement`.")
-      return
-    }
-    guard let expression = expressionStmt.expression as? IntegerLiteral else {
-      XCTFail("expressionStatement.expression is not of the type `IntegerLiteral`.")
-      return
-    }
-
-    try validateIntegerLiteral(expression, expectedValue: 5)
   }
 
 
@@ -220,44 +305,6 @@ final class ParserTest: XCTestCase {
         leftValue: testCase.leftValue,
         operator: testCase.expectedOperator,
         rightValue: testCase.rightValue)
-    }
-  }
-
-
-  func testBooleanLiteral() throws {
-    let tests: [(input: String, expectedValue: Bool)] = [
-      ("true", true),
-      ("false", false)
-    ]
-
-    for testCase in tests {
-      let lexer = Lexer(input: testCase.input)
-      let parser = Parser(lexer: lexer)
-
-      guard let program = parser.parseProgram() else {
-        XCTFail("`parseProgram()` failed to parse the input.")
-        return
-      }
-      if checkParserErrors(parser) {
-        XCTFail("Test failed due to preceding parser errors.")
-        return
-      }
-
-      XCTAssertEqual(program.statements.count, 1)
-
-      guard let expressionStmt = program.statements.first as? ExpressionStatement else {
-        XCTFail("statement is not of the type `ExpressionStatement`.")
-        return
-      }
-      guard let boolean = expressionStmt.expression as? BooleanLiteral else {
-        XCTFail("expressionStatement.expression is not of the type `Boolean`.")
-        return
-      }
-
-      XCTAssertEqual(
-        boolean.value,
-        testCase.expectedValue,
-        "boolean.value not \(testCase.expectedValue). Got=\(boolean.value)")
     }
   }
 
