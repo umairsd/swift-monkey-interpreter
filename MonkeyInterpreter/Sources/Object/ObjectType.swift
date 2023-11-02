@@ -13,4 +13,5 @@ public enum ObjectType {
   case error
   case ok
   case function
+  case builtIn
 }

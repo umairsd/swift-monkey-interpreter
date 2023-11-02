@@ -251,6 +251,9 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  // MARK: - Functions
+
+
   func testFunctionObject() throws {
     let input = "fn(x) { x + 2; }"
     let evaluated = runEval(input)
@@ -318,6 +321,40 @@ final class EvaluatorTest: XCTestCase {
     }
 
     try validateIntegerObject(evaluated, expected: 4)
+  }
+
+
+  func testBuiltinFunction() throws {
+    let tests: [(input: String, expected: Any?)] = [
+      ("len(\"\")", 0),
+      ("len(\"four\")", 4),
+      ("len(\"hello world\")", 11),
+      ("len(1)", "Argument to `len` not supported. Got=integer"),
+      ("len(\"one\", \"two\")", "Wrong number of arguments. Got=2, want=1"),
+    ]
+
+    for testCase in tests {
+      let evaluated = runEval(testCase.input)
+
+      switch testCase.expected {
+      case let expectedStr as String:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTAssertEqual(errorObj.message, expectedStr)
+        } else {
+          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
+        }
+
+      case let exptectedInt as Int:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else {
+          try validateIntegerObject(evaluated, expected: exptectedInt)
+        }
+
+      default:
+        XCTFail()
+      }
+    }
   }
 
 

@@ -167,10 +167,13 @@ public struct Evaluator {
     within environment: Environment
   ) -> Object {
 
-    guard let v = environment.getObject(for: identifer.value) else {
-      return newError(for: "Identifier not found: \(identifer.value)")
+    if let v = environment.getObject(for: identifer.value) {
+      return v
     }
-    return v
+    if let v = Builtins.builtinMap[identifer.value] {
+      return v
+    }
+    return newError(for: "Identifier not found: \(identifer.value)")
   }
 
 
@@ -191,14 +194,18 @@ public struct Evaluator {
   }
 
 
-  private func applyFunctionObject(_ obj: Object, to arguments: [Object]) -> Object {
-    guard let functionObj = obj as? FunctionObject, functionObj.type() == .function else {
-      return newError(for: "Not a function: \(obj.type())")
+  private func applyFunctionObject(_ fn: Object, to arguments: [Object]) -> Object {
+    if let functionObj = fn as? FunctionObject, functionObj.type() == .function {
+      let extendedEnv = extendFunctionEnvironment(functionObj, arguments: arguments)
+      let evaluated = eval(functionObj.body, within: extendedEnv)
+      return unwrapReturnValue(evaluated)
     }
 
-    let extendedEnv = extendFunctionEnvironment(functionObj, arguments: arguments)
-    let evaluated = eval(functionObj.body, within: extendedEnv)
-    return unwrapReturnValue(evaluated)
+    if let builtinObj = fn as? BuiltinObject, builtinObj.type() == .builtIn {
+      return builtinObj.fn(arguments)
+    }
+
+    return newError(for: "Not a function: \(fn.type())")
   }
 
 
