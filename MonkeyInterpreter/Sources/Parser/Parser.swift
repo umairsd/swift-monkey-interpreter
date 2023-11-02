@@ -52,7 +52,7 @@ public class Parser {
     registerPrefix(for: .if, fn: parseIfExpression)
     registerPrefix(for: .function, fn: parseFunctionLiteral)
     registerPrefix(for: .lBracket, fn: parseArrayLiteral)
-    registerPrefix(for: .lBrace, fn: parseHashLiteral)
+    registerPrefix(for: .lBrace, fn: parseDictionaryLiteral)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -106,14 +106,14 @@ public class Parser {
   }
 
 
-  private func parseHashLiteral() -> HashLiteral? {
+  private func parseDictionaryLiteral() -> DictionaryLiteral? {
     guard currentTokenIs(.lBrace) else {
       errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
     }
 
     let t = currentToken
-    var pairs: [HashEntity] = []
+    var pairs: [DictionaryEntity] = []
 
     while !peekTokenIs(.rBrace) {
       incrementTokens()
@@ -131,7 +131,7 @@ public class Parser {
         return nil
       }
 
-      pairs.append(HashEntity(key: key, value: value))
+      pairs.append(DictionaryEntity(key: key, value: value))
 
       if !peekTokenIs(.rBrace) && !expectPeekAndIncrement(.comma) {
         return nil
@@ -142,7 +142,7 @@ public class Parser {
       return nil
     }
 
-    return HashLiteral(token: t, pairs: pairs)
+    return DictionaryLiteral(token: t, pairs: pairs)
   }
 
 

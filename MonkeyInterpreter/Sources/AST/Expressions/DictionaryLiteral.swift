@@ -4,7 +4,7 @@ import Foundation
 import Token
 
 
-public class HashEntity {
+public class DictionaryEntity {
   public let key: Expression
   public let value: Expression
 
@@ -15,12 +15,12 @@ public class HashEntity {
 }
 
 
-/// A type that represents a HashMap.
-public class HashLiteral: Expression {
+/// A type that represents a dictionary.
+public class DictionaryLiteral: Expression {
 
-  public let pairs: [HashEntity]
+  public let pairs: [DictionaryEntity]
 
-  public init(token: Token, pairs: [HashEntity]) {
+  public init(token: Token, pairs: [DictionaryEntity]) {
     self.pairs = pairs
     self.token = token
   }

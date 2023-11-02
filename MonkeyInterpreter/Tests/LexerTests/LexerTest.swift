@@ -342,7 +342,7 @@ final class LexerTest: XCTestCase {
   }
 
 
-  func testNextToken_Hashmaps() throws {
+  func testNextToken_Dictionary() throws {
     let input = """
     {"foo": "bar"}
     """

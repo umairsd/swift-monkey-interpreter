@@ -221,7 +221,7 @@ final class ParserTest: XCTestCase {
   }
 
 
-  func testHashLiteral_Empty() throws {
+  func testDictionaryLiteral_Empty() throws {
     let input = "{}"
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
@@ -240,16 +240,16 @@ final class ParserTest: XCTestCase {
       XCTFail("statement is not of the type `ExpressionStatement`.")
       return
     }
-    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
-      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+    guard let dictionaryLiteral = expressionStmt.expression as? DictionaryLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `DictionaryLiteral`.")
       return
     }
 
-    XCTAssertEqual(hashLiteral.pairs.count, 0)
+    XCTAssertEqual(dictionaryLiteral.pairs.count, 0)
   }
 
 
-  func testHashLiteral_StringKeys() throws {
+  func testDictionaryLiterals_StringKeys() throws {
     let input = "{\"one\": 1, \"two\": 2, \"three\": 3}"
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
@@ -263,12 +263,12 @@ final class ParserTest: XCTestCase {
       XCTFail("statement is not of the type `ExpressionStatement`.")
       return
     }
-    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
-      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+    guard let dictionaryLiteral = expressionStmt.expression as? DictionaryLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `DictionaryLiteral`.")
       return
     }
 
-    XCTAssertEqual(hashLiteral.pairs.count, 3)
+    XCTAssertEqual(dictionaryLiteral.pairs.count, 3)
 
     let expected = [
       "one": 1,
@@ -276,7 +276,7 @@ final class ParserTest: XCTestCase {
       "three": 3
     ]
 
-    for pair in hashLiteral.pairs {
+    for pair in dictionaryLiteral.pairs {
       guard let key = pair.key as? StringLiteral else {
         XCTFail("Key is not of type `StringLiteral`. Got=\(pair.key)")
         continue
@@ -292,7 +292,7 @@ final class ParserTest: XCTestCase {
   }
 
 
-  func testHashLiterals_withExpressions() throws {
+  func testDictionaryLiterals_withExpressions() throws {
     let input = "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}"
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
@@ -306,12 +306,12 @@ final class ParserTest: XCTestCase {
       XCTFail("statement is not of the type `ExpressionStatement`.")
       return
     }
-    guard let hashLiteral = expressionStmt.expression as? HashLiteral else {
-      XCTFail("expressionStatement.expression is not of the type `HashLiteral`.")
+    guard let dictionaryLiteral = expressionStmt.expression as? DictionaryLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `DictionaryLiteral`.")
       return
     }
 
-    XCTAssertEqual(hashLiteral.pairs.count, 3)
+    XCTAssertEqual(dictionaryLiteral.pairs.count, 3)
 
     let testFuncs: [String: (Expression) throws -> Void] = [
       "one": { e in
@@ -325,7 +325,7 @@ final class ParserTest: XCTestCase {
       }
     ]
 
-    for pair in hashLiteral.pairs {
+    for pair in dictionaryLiteral.pairs {
       guard let key = pair.key as? StringLiteral else {
         XCTFail("Key is not of type `StringLiteral`. Got=\(pair.key)")
         continue
