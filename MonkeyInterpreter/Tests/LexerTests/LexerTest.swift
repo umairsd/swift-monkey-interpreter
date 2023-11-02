@@ -296,4 +296,25 @@ final class LexerTest: XCTestCase {
       XCTAssertEqual(token.literal, expectedToken.literal)
     }
   }
+
+
+  func testNextToken_String() {
+    let input = """
+    "foobar"
+    "foo bar"
+    """
+
+    let lexer = Lexer(input: input)
+    let expectedTokens = [
+      Token(type: .string, literal: "foobar"),
+      Token(type: .string, literal: "foo bar"),
+      Token(type: .eof, literal: ""),
+    ]
+
+    for expectedToken in expectedTokens {
+      let token = lexer.nextToken()
+      XCTAssertEqual(token.type, expectedToken.type)
+      XCTAssertEqual(token.literal, expectedToken.literal)
+    }
+  }
 }

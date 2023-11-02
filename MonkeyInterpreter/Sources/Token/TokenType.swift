@@ -10,6 +10,7 @@ public enum TokenType: String {
   // Identifiers + literals
   case ident
   case int
+  case string
 
   // Operators
   case assign

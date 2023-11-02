@@ -10,7 +10,6 @@ public class Lexer {
   /// Current position in the input. It points to the current character. It is nil prior to
   /// any character being read.
   private var position: String.Index?
-  // TODO: Explore if this property can be deleted.
   /// Current character under examination.
   private var currentChar: Character?
   /// The next reading position in the input (after current character).
@@ -87,6 +86,12 @@ public class Lexer {
       token = Token(type: .rBrace, literal: String(ch))
     case ",":
       token = Token(type: .comma, literal: String(ch))
+    case "\"":
+      moveToNextChar()
+      guard let str = readString() else {
+        fatalError("Error: Unable to read the token for the string.")
+      }
+      token = Token(type: .string, literal: str)
 
     default:
       if ch.isLetter {
@@ -133,7 +138,14 @@ public class Lexer {
   }
 
 
-  private func readCharacters(where predicate: (Character) -> Bool) -> String? {
+  /// Reads in a string, and advances the lexer's positions until it encounters the string
+  /// terminating character.
+  private func readString() -> String? {
+    return readCharacters { $0 != "\"" }
+  }
+
+
+  private func readCharacters(while predicate: (Character) -> Bool) -> String? {
     guard let startingPosition = self.position else { return nil }
     while let c = currentChar, predicate(c) {
       moveToNextChar()
