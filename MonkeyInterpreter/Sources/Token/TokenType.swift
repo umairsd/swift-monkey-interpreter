@@ -27,6 +27,7 @@ public enum TokenType: String {
   // Delimiters
   case comma
   case semicolon
+  case colon
 
   case lParen
   case rParen

@@ -76,6 +76,11 @@ public class Lexer {
 
     case ";":
       token = Token(type: .semicolon, literal: String(ch))
+    case ",":
+      token = Token(type: .comma, literal: String(ch))
+    case ":":
+      token = Token(type: .colon, literal: String(ch))
+
     case "(":
       token = Token(type: .lParen, literal: String(ch))
     case ")":
@@ -88,8 +93,6 @@ public class Lexer {
       token = Token(type: .lBracket, literal: String(ch))
     case "]":
       token = Token(type: .rBracket, literal: String(ch))
-    case ",":
-      token = Token(type: .comma, literal: String(ch))
     case "\"":
       moveToNextChar()
       guard let str = readString() else {
