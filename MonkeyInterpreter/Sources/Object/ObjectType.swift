@@ -7,6 +7,7 @@ public enum ObjectType {
 
   case integer
   case boolean
+  case string
   case null
   case `return`
   case error

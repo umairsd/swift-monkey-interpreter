@@ -37,7 +37,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -68,7 +68,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -103,13 +103,34 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
       }
 
       try validateBooleanObject(evaluated, expected: testCase.expected)
+    }
+  }
+
+
+  func testEvalStringLiteral() throws {
+    let tests: [(input: String, expectedValue: String)] = [
+      ("\"foobar\"", "foobar"),
+      ("\"foo bar\"", "foo bar"),
+      ("\"foo bar         \"", "foo bar         "),
+      ("\"12320\"", "12320"),
+      ("\"hello, \" + \"world!\"", "hello, world!"),
+    ]
+
+    for testCase in tests {
+      let evaluated = runEval(testCase.input)
+      if let errorObj = evaluated as? ErrorObject {
+        XCTFail(errorObj.message)
+        return
+      }
+
+      XCTAssertEqual(evaluated.inspect(), testCase.expectedValue)
     }
   }
 
@@ -125,7 +146,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -150,7 +171,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -184,7 +205,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -214,10 +235,12 @@ final class EvaluatorTest: XCTestCase {
        }
        """, "Unknown operator: boolean + boolean"),
       ("foobar", "Identifier not found: foobar"),
+
+      ("\"hello, \" - \"world!\"", "Unknown operator: string - string"),
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       guard let errorObj = evaluated as? ErrorObject else {
         XCTFail("No error object returned. Got=\(type(of: evaluated))")
         return
@@ -230,7 +253,7 @@ final class EvaluatorTest: XCTestCase {
 
   func testFunctionObject() throws {
     let input = "fn(x) { x + 2; }"
-    let evaluated = runEval1(input)
+    let evaluated = runEval(input)
     if let errorObj = evaluated as? ErrorObject {
       XCTFail(errorObj.message)
       return
@@ -267,7 +290,7 @@ final class EvaluatorTest: XCTestCase {
     ]
 
     for testCase in tests {
-      let evaluated = runEval1(testCase.input)
+      let evaluated = runEval(testCase.input)
       if let errorObj = evaluated as? ErrorObject {
         XCTFail(errorObj.message)
         return
@@ -288,7 +311,7 @@ final class EvaluatorTest: XCTestCase {
     addTwo(2);
     """
 
-    let evaluated = runEval1(input)
+    let evaluated = runEval(input)
     if let errorObj = evaluated as? ErrorObject {
       XCTFail(errorObj.message)
       return
@@ -337,7 +360,7 @@ final class EvaluatorTest: XCTestCase {
 
   // MARK: - Private
 
-  private func runEval1(_ input: String) -> Object {
+  private func runEval(_ input: String) -> Object {
     let lexer = Lexer(input: input)
     let parser = Parser(lexer: lexer)
     let env = Environment()

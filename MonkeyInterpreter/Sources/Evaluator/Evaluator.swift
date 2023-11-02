@@ -51,6 +51,9 @@ public struct Evaluator {
     case let booleanLiteral as BooleanLiteral:
       return booleanLiteral.value ? trueObject : falseObject
 
+    case let strLiteral as StringLiteral:
+      return StringObject(value: strLiteral.value)
+
     case let identifer as Identifier:
       return evalIdentifier(identifer, within: environment)
 
@@ -221,6 +224,9 @@ public struct Evaluator {
     if let i1 = left as? IntegerObject, let i2 = right as? IntegerObject {
       return evalIntegerInfixExpression(infixOperator, leftInt: i1, rightInt: i2)
     }
+    if let s1 = left as? StringObject, let s2 = right as? StringObject {
+      return evalStringInfixExpression(infixOperator, leftString: s1, rightString: s2)
+    }
 
     if infixOperator == "==" {
       return booleanObjectFor(left === right)
@@ -269,9 +275,31 @@ public struct Evaluator {
       return booleanObjectFor(l != r)
 
     default:
-      return newError(for: "Unknown operator: \(leftInt.type()) \(infixOperator) \(leftInt.type())")
+      return newError(
+        for: "Unknown operator: \(leftInt.type()) \(infixOperator) \(rightInt.type())")
     }
   }
+
+
+  private func evalStringInfixExpression(
+    _ infixOperator: String,
+    leftString: StringObject,
+    rightString: StringObject
+  ) -> Object {
+
+    let l = leftString.value
+    let r = rightString.value
+
+    switch infixOperator {
+    case "+":
+      return StringObject(value: l + r)
+
+    default:
+      return newError(
+        for: "Unknown operator: \(leftString.type()) \(infixOperator) \(rightString.type())")
+    }
+  }
+
 
 
   // MARK: Evaluators (Prefix)
