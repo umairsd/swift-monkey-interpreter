@@ -46,8 +46,8 @@ public class Parser {
     registerPrefix(for: .string, fn: parseStringLiteral)
     registerPrefix(for: .bang, fn: parsePrefixExpression)
     registerPrefix(for: .minus, fn: parsePrefixExpression)
-    registerPrefix(for: .true, fn: parseBoolean)
-    registerPrefix(for: .false, fn: parseBoolean)
+    registerPrefix(for: .true, fn: parseBooleanLiteral)
+    registerPrefix(for: .false, fn: parseBooleanLiteral)
     registerPrefix(for: .lParen, fn: parseGroupedExpression)
     registerPrefix(for: .if, fn: parseIfExpression)
     registerPrefix(for: .function, fn: parseFunctionLiteral)
@@ -90,6 +90,8 @@ public class Parser {
 
   // MARK: - Private (Parse Literals)
 
+
+  /// Parses an `ArrayLiteral` starting from the current token.
   private func parseArrayLiteral() -> ArrayLiteral? {
     guard currentTokenIs(.lBracket) else {
       errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
@@ -102,7 +104,43 @@ public class Parser {
   }
 
 
-  // MARK: - Private (Parse)
+  /// Parses a `Boolean` starting from the current token.
+  private func parseBooleanLiteral() -> BooleanLiteral? {
+    guard currentTokenIs(.true) || currentTokenIs(.false) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+    return BooleanLiteral(token: currentToken, value: currentTokenIs(.true))
+  }
+
+
+  /// Parses an `IntegerLiteral` starting from the current token.
+  private func parseIntegerLiteral() -> IntegerLiteral? {
+    guard currentTokenIs(.int) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+    guard let intValue = Int(currentToken.literal) else {
+      fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
+    }
+    return IntegerLiteral(token: self.currentToken, value: intValue)
+  }
+
+
+  /// Parses a `StringLiteral` starting from the current token.
+  private func parseStringLiteral() -> StringLiteral? {
+    guard currentTokenIs(.string) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let strValue = currentToken.literal
+    return StringLiteral(token: self.currentToken, value: strValue)
+  }
+
+
+  // MARK: - Private (Parse Statements)
+
 
   /// Parses a `Statement` based on the type of the current token.
   private func parseStatement() -> Statement? {
@@ -113,6 +151,63 @@ public class Parser {
       parseReturnStatement()
     default:
       parseExpressionStatement()
+    }
+  }
+
+
+  /// Parses a `LetStatement` starting from the current token.
+  private func parseLetStatement() -> LetStatement? {
+    guard currentTokenIs(.let) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken
+
+    // Parse the name.
+    guard expectPeekAndIncrement(.ident) else { return nil }
+    let nameIdentifier = Identifier(token: currentToken, value: currentToken.literal)
+
+    // Parse the assignment operator.
+    guard expectPeekAndIncrement(.assign) else { return nil }
+
+    incrementTokens()
+
+    guard let expr = parseExpression(withPrecedence: .lowest) else {
+      errors.append("\(#function): Unable to parse the expression.")
+      return nil
+    }
+
+    if peekTokenIs(.semicolon) {
+      incrementTokens()
+    }
+
+    let stmt = LetStatement(token: t, name: nameIdentifier, value: expr)
+    return stmt
+  }
+
+
+  /// Parses a `ReturnStatement` starting from the current token.
+  private func parseReturnStatement() -> ReturnStatement? {
+    guard currentTokenIs(.return) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken
+    if peekTokenIs(.semicolon) {
+      incrementTokens()
+      return ReturnStatement(token: t)
+    } else {
+      incrementTokens()
+      let returnValue = parseExpression(withPrecedence: .lowest)
+
+      if peekTokenIs(.semicolon) {
+        incrementTokens()
+      }
+
+      let stmt = ReturnStatement(token: t, returnValue: returnValue)
+      return stmt
     }
   }
 
@@ -128,6 +223,33 @@ public class Parser {
     }
     return stmt
   }
+
+
+  /// Parses a `BlockStatement` starting from the current token.
+  private func parseBlockStatement() -> BlockStatement? {
+    guard currentTokenIs(.lBrace) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken // Points to "{"
+    var statements: [Statement] = []
+
+    incrementTokens()
+
+    while !currentTokenIs(.rBrace) && !currentTokenIs(.eof) {
+      if let stmt = parseStatement() {
+        statements.append(stmt)
+      }
+      incrementTokens()
+    }
+
+    let blockStmt = BlockStatement(token: t, statements: statements)
+    return blockStmt
+  }
+
+
+  // MARK: - Private (Parse Expressions)
 
 
   /// Parses an expression with a given precedence (defaults to `.lowest`).
@@ -233,28 +355,101 @@ public class Parser {
   }
 
 
-  /// Parses a `BlockStatement` starting from the current token.
-  private func parseBlockStatement() -> BlockStatement? {
-    guard currentTokenIs(.lBrace) else {
+  /// Parses an `Identifer` starting from the current token.
+  private func parseIdentifer() -> Identifier? {
+    guard currentTokenIs(.ident) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+    return Identifier(token: self.currentToken, value: self.currentToken.literal)
+  }
+
+
+  /// Parses a `PrefixExpression` starting from the current token.
+  private func parsePrefixExpression() -> PrefixExpression? {
+    guard currentTokenIs(.bang) || currentTokenIs(.minus) else {
       errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
     }
 
-    let t = currentToken // Points to "{"
-    var statements: [Statement] = []
+    let token = currentToken
+    let prefixOperator = currentToken.literal
 
     incrementTokens()
 
-    while !currentTokenIs(.rBrace) && !currentTokenIs(.eof) {
-      if let stmt = parseStatement() {
-        statements.append(stmt)
-      }
-      incrementTokens()
+    guard let rightExpression = parseExpression(withPrecedence: .prefix) else {
+      errors.append("Unable to parse the right expression for the Prefix Expression.")
+      return nil
     }
 
-    let blockStmt = BlockStatement(token: t, statements: statements)
-    return blockStmt
+    let expr = PrefixExpression(
+      token: token,
+      prefixOperator: prefixOperator,
+      rightExpression: rightExpression)
+    return expr
   }
+
+
+  /// Parses an `InfixExpression` starting from the current token.
+  private func parseInfixExpression(left: Expression?) -> InfixExpression? {
+    guard let leftExpr = left else {
+      return nil
+    }
+    let token = currentToken
+    let infixOperator = currentToken.literal
+    let precedence = currentPrecedence()
+
+    incrementTokens()
+
+    guard let right = parseExpression(withPrecedence: precedence) else {
+      errors.append("Unable to parse the right expression for the Infix Expression.")
+      return nil
+    }
+
+    let expr = InfixExpression(
+      token: token,
+      leftExpression: leftExpr,
+      infixOperator: infixOperator,
+      rightExpression: right)
+    return expr
+  }
+
+
+  /// Parses a list of expressions separated by commas. E.g. arguments in function, or
+  /// elements in an array.
+  private func parseExpressionList(
+    startingAt startToken: TokenType,
+    terminatingAt endToken: TokenType
+  ) -> [Expression] {
+
+    guard currentTokenIs(startToken) else {
+      errors.append(
+        "\(#function): Invalid starting token. Got=\(currentToken.type), Want=\(startToken)")
+      return []
+    }
+
+    incrementTokens()
+
+    var tokens: [Expression] = []
+    while !currentTokenIs(endToken) && !currentTokenIs(.eof) {
+      if let arg = parseExpression(withPrecedence: .lowest) {
+        tokens.append(arg)
+      }
+      incrementTokens()
+      if currentTokenIs(.comma) {
+        incrementTokens()
+      }
+    }
+
+    if !currentTokenIs(endToken) {
+      return []
+    }
+
+    return tokens
+  }
+
+
+  // MARK: - Private (Parse Functions)
 
 
   /// Parses a `FunctionLiteral` starting from the current token.
@@ -311,149 +506,8 @@ public class Parser {
   }
 
 
-  /// Parses a `LetStatement` starting from the current token.
-  private func parseLetStatement() -> LetStatement? {
-    guard currentTokenIs(.let) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-
-    let t = currentToken
-
-    // Parse the name.
-    guard expectPeekAndIncrement(.ident) else { return nil }
-    let nameIdentifier = Identifier(token: currentToken, value: currentToken.literal)
-
-    // Parse the assignment operator.
-    guard expectPeekAndIncrement(.assign) else { return nil }
-
-    incrementTokens()
-
-    guard let expr = parseExpression(withPrecedence: .lowest) else {
-      errors.append("\(#function): Unable to parse the expression.")
-      return nil
-    }
-
-    if peekTokenIs(.semicolon) {
-      incrementTokens()
-    }
-
-    let stmt = LetStatement(token: t, name: nameIdentifier, value: expr)
-    return stmt
-  }
-
-
-  /// Parses a `ReturnStatement` starting from the current token.
-  private func parseReturnStatement() -> ReturnStatement? {
-    guard currentTokenIs(.return) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-
-    let t = currentToken
-    if peekTokenIs(.semicolon) {
-      incrementTokens()
-      return ReturnStatement(token: t)
-    } else {
-      incrementTokens()
-      let returnValue = parseExpression(withPrecedence: .lowest)
-
-      if peekTokenIs(.semicolon) {
-        incrementTokens()
-      }
-
-      let stmt = ReturnStatement(token: t, returnValue: returnValue)
-      return stmt
-    }
-  }
-
-
-  /// Parses an `Identifer` starting from the current token.
-  private func parseIdentifer() -> Identifier? {
-    guard currentTokenIs(.ident) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-    return Identifier(token: self.currentToken, value: self.currentToken.literal)
-  }
-
-
-  /// Parses an `IntegerLiteral` starting from the current token.
-  private func parseIntegerLiteral() -> IntegerLiteral? {
-    guard currentTokenIs(.int) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-    guard let intValue = Int(currentToken.literal) else {
-      fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
-    }
-    return IntegerLiteral(token: self.currentToken, value: intValue)
-  }
-
-
-  /// Parses a `StringLiteral` starting from the current token.
-  private func parseStringLiteral() -> StringLiteral? {
-    guard currentTokenIs(.string) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-
-    let strValue = currentToken.literal
-    return StringLiteral(token: self.currentToken, value: strValue)
-  }
-
-
-  /// Parses a `PrefixExpression` starting from the current token.
-  private func parsePrefixExpression() -> PrefixExpression? {
-    guard currentTokenIs(.bang) || currentTokenIs(.minus) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-
-    let token = currentToken
-    let prefixOperator = currentToken.literal
-
-    incrementTokens()
-
-    guard let rightExpression = parseExpression(withPrecedence: .prefix) else {
-      errors.append("Unable to parse the right expression for the Prefix Expression.")
-      return nil
-    }
-
-    let expr = PrefixExpression(
-      token: token,
-      prefixOperator: prefixOperator,
-      rightExpression: rightExpression)
-    return expr
-  }
-
-
-  /// Parses an `InfixExpression` starting from the current token.
-  private func parseInfixExpression(left: Expression?) -> InfixExpression? {
-    guard let leftExpr = left else {
-      return nil
-    }
-    let token = currentToken
-    let infixOperator = currentToken.literal
-    let precedence = currentPrecedence()
-
-    incrementTokens()
-
-    guard let right = parseExpression(withPrecedence: precedence) else {
-      errors.append("Unable to parse the right expression for the Infix Expression.")
-      return nil
-    }
-
-    let expr = InfixExpression(
-      token: token,
-      leftExpression: leftExpr,
-      infixOperator: infixOperator,
-      rightExpression: right)
-    return expr
-  }
-
-
-  private func parseCallExpression(left: Expression?) -> Expression? {
+  /// Parses a `CallExpression` starting from the current token.
+  private func parseCallExpression(left: Expression?) -> CallExpression? {
     guard currentTokenIs(.lParen) else {
       errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
       return nil
@@ -464,81 +518,9 @@ public class Parser {
     }
 
     let t = currentToken
-    let arguments = parseFunctionCallArguments()
+    let arguments = parseExpressionList(startingAt: .lParen, terminatingAt: .rParen)
     let callExpr = CallExpression(token: t, function: function, arguments: arguments)
     return callExpr
-  }
-
-
-  /// Parses the arguments for a function call.
-  private func parseFunctionCallArguments() -> [Expression] {
-    guard currentTokenIs(.lParen) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return []
-    }
-
-    incrementTokens()
-
-    var arguments: [Expression] = []
-    while !currentTokenIs(.rParen) && !currentTokenIs(.eof) {
-      if let arg = parseExpression(withPrecedence: .lowest) {
-        arguments.append(arg)
-      }
-      incrementTokens()
-      if currentTokenIs(.comma) {
-        incrementTokens()
-      }
-    }
-
-    if !currentTokenIs(.rParen) {
-      return []
-    }
-
-    return arguments
-  }
-
-
-  /// Parses a `Boolean` starting from the current token.
-  private func parseBoolean() -> BooleanLiteral? {
-    guard currentTokenIs(.true) || currentTokenIs(.false) else {
-      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
-      return nil
-    }
-    return BooleanLiteral(token: currentToken, value: currentTokenIs(.true))
-  }
-
-
-  /// Parses a list of expressions separated by commas. E.g. arguments in function, or
-  /// elements in an array.
-  private func parseExpressionList(
-    startingAt startToken: TokenType,
-    terminatingAt endToken: TokenType
-  ) -> [Expression] {
-
-    guard currentTokenIs(startToken) else {
-      errors.append(
-        "\(#function): Invalid starting token. Got=\(currentToken.type), Want=\(startToken)")
-      return []
-    }
-
-    incrementTokens()
-
-    var tokens: [Expression] = []
-    while !currentTokenIs(endToken) && !currentTokenIs(.eof) {
-      if let arg = parseExpression(withPrecedence: .lowest) {
-        tokens.append(arg)
-      }
-      incrementTokens()
-      if currentTokenIs(.comma) {
-        incrementTokens()
-      }
-    }
-
-    if !currentTokenIs(endToken) {
-      return []
-    }
-
-    return tokens
   }
 
 
