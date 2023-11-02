@@ -180,6 +180,47 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testArrayLiteral() throws {
+    let input = "[1, 2 * 2, 3 + 4]"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    if checkParserErrors(parser) {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+
+    guard let expressionStmt = program.statements.first as? ExpressionStatement else {
+      XCTFail("statement is not of the type `ExpressionStatement`.")
+      return
+    }
+    guard let arrayLiteral = expressionStmt.expression as? ArrayLiteral else {
+      XCTFail("expressionStatement.expression is not of the type `ArrayLiteral`.")
+      return
+    }
+
+    XCTAssertEqual(arrayLiteral.elements.count, 3)
+
+    try validateIntegerLiteral(arrayLiteral.elements[0], expectedValue: 1)
+    try validateInfixExpression(
+      arrayLiteral.elements[1],
+      leftValue: 2,
+      operator: "*",
+      rightValue: 2)
+    try validateInfixExpression(
+      arrayLiteral.elements[2],
+      leftValue: 3,
+      operator: "+",
+      rightValue: 4)
+  }
+
+
   // MARK: - Expressions
 
 
@@ -270,7 +311,6 @@ final class ParserTest: XCTestCase {
       ("5 == 5", 5, "==", 5),
       ("5 != 5", 5, "!=", 5),
       ("alice * bob", "alice", "*", "bob"),
-      
       ("true == true", true, "==", true),
       ("true != false", true, "!=", false),
       ("false == false", false, "==", false),

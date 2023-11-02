@@ -51,6 +51,7 @@ public class Parser {
     registerPrefix(for: .lParen, fn: parseGroupedExpression)
     registerPrefix(for: .if, fn: parseIfExpression)
     registerPrefix(for: .function, fn: parseFunctionLiteral)
+    registerPrefix(for: .lBracket, fn: parseArrayLiteral)
 
     registerInfix(for: .plus, fn: parseInfixExpression(left:))
     registerInfix(for: .minus, fn: parseInfixExpression(left:))
@@ -84,6 +85,20 @@ public class Parser {
 
   public func registerInfix(for tokenType: TokenType, fn: @escaping InfixParseFn) {
     infixParseFunctions[tokenType] = fn
+  }
+
+
+  // MARK: - Private (Parse Literals)
+
+  private func parseArrayLiteral() -> ArrayLiteral? {
+    guard currentTokenIs(.lBracket) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken
+    let elements = parseExpressionList(startingAt: .lBracket, terminatingAt: .rBracket)
+    return ArrayLiteral(token: t, elements: elements)
   }
 
 
@@ -490,6 +505,40 @@ public class Parser {
       return nil
     }
     return BooleanLiteral(token: currentToken, value: currentTokenIs(.true))
+  }
+
+
+  /// Parses a list of expressions separated by commas. E.g. arguments in function, or
+  /// elements in an array.
+  private func parseExpressionList(
+    startingAt startToken: TokenType,
+    terminatingAt endToken: TokenType
+  ) -> [Expression] {
+
+    guard currentTokenIs(startToken) else {
+      errors.append(
+        "\(#function): Invalid starting token. Got=\(currentToken.type), Want=\(startToken)")
+      return []
+    }
+
+    incrementTokens()
+
+    var tokens: [Expression] = []
+    while !currentTokenIs(endToken) && !currentTokenIs(.eof) {
+      if let arg = parseExpression(withPrecedence: .lowest) {
+        tokens.append(arg)
+      }
+      incrementTokens()
+      if currentTokenIs(.comma) {
+        incrementTokens()
+      }
+    }
+
+    if !currentTokenIs(endToken) {
+      return []
+    }
+
+    return tokens
   }
 
 
