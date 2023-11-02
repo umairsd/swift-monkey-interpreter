@@ -298,7 +298,7 @@ final class LexerTest: XCTestCase {
   }
 
 
-  func testNextToken_String() {
+  func testNextToken_String() throws {
     let input = """
     "foobar"
     "foo bar"
@@ -308,6 +308,29 @@ final class LexerTest: XCTestCase {
     let expectedTokens = [
       Token(type: .string, literal: "foobar"),
       Token(type: .string, literal: "foo bar"),
+      Token(type: .eof, literal: ""),
+    ]
+
+    for expectedToken in expectedTokens {
+      let token = lexer.nextToken()
+      XCTAssertEqual(token.type, expectedToken.type)
+      XCTAssertEqual(token.literal, expectedToken.literal)
+    }
+  }
+
+
+  func testNextToken_Arrays() throws {
+    let input = """
+    [1, 2]
+    """
+
+    let lexer = Lexer(input: input)
+    let expectedTokens = [
+      Token(type: .lBracket, literal: "["),
+      Token(type: .int, literal: "1"),
+      Token(type: .comma, literal: ","),
+      Token(type: .int, literal: "2"),
+      Token(type: .rBracket, literal: "]"),
       Token(type: .eof, literal: ""),
     ]
 

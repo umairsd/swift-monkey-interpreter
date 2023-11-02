@@ -32,6 +32,8 @@ public enum TokenType: String {
   case rParen
   case lBrace
   case rBrace
+  case lBracket
+  case rBracket
 
   // Keywords
   case function

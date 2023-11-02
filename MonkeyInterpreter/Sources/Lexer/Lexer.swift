@@ -84,6 +84,10 @@ public class Lexer {
       token = Token(type: .lBrace, literal: String(ch))
     case "}":
       token = Token(type: .rBrace, literal: String(ch))
+    case "[":
+      token = Token(type: .lBracket, literal: String(ch))
+    case "]":
+      token = Token(type: .rBracket, literal: String(ch))
     case ",":
       token = Token(type: .comma, literal: String(ch))
     case "\"":
