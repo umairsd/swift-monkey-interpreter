@@ -42,7 +42,7 @@ public struct Evaluator {
         return v
       }
       environment.setObject(for: letStmt.name.value, v)
-      return Ok()
+      return OkObject()
 
       // Expressions
     case let intLiteral as IntegerLiteral:
@@ -125,7 +125,7 @@ public struct Evaluator {
 
   
   private func evalProgram(_ program: Program, within environment: Environment) -> Object {
-    var result: Object = Ok()
+    var result: Object = OkObject()
 
     for statement in program.statements {
       result = eval(statement, within: environment)
@@ -147,7 +147,7 @@ public struct Evaluator {
     within environment: Environment
   ) -> Object {
 
-    var result: Object = Ok()
+    var result: Object = OkObject()
 
     for statement in blockStatement.statements {
       result = eval(statement, within: environment)

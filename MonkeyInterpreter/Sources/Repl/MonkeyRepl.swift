@@ -43,7 +43,7 @@ public struct MonkeyRepl {
         continue
       }
 
-      if parser.errors.count != 0 {
+      guard parser.errors.count == 0 else {
         printParseErrors(parser.errors)
         continue
       }

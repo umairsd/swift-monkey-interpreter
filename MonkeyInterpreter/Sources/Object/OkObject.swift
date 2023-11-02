@@ -4,7 +4,7 @@ import Foundation
 
 
 /// Represents a no-op OK state.
-public class Ok: Object {
+public class OkObject: Object {
   
   public init() {}
 

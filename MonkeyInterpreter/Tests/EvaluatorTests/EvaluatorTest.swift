@@ -329,21 +329,21 @@ final class EvaluatorTest: XCTestCase {
       ("len(\"\")", 0),
       ("len(\"four\")", 4),
       ("len(\"hello world\")", 11),
-      ("len(1)", "Argument to `len` not supported. Got=integer"),
+      ("len(1)", "Argument to `len` not supported. Got integer"),
       ("len(\"one\", \"two\")", "Wrong number of arguments. Got=2, want=1"),
-//      ("len([1, 2, 3])", 3),
-//      ("len([])", 0),
-//      ("puts(\"hello\", \"world!\")", nil),
-//      ("first([1, 2, 3])", 1),
-//      ("first([])", nil),
-//      ("first(1)", "Argument to `first` must be ARRAY, got INTEGER"),
-//      ("last([1, 2, 3])", 3),
-//      ("last([])", nil),
-//      ("last(1)", "Argument to `last` must be ARRAY, got INTEGER"),
-//      ("rest([1, 2, 3])", [2, 3]),
-//      ("rest([])", nil),
-//      ("push([], 1)", [1]),
-//      ("push(1, 1)", "Argument to `push` must be ARRAY, got INTEGER"),
+      ("len([1, 2, 3])", 3),
+      ("len([])", 0),
+      ("puts(\"hello\", \"world!\")", nil),
+      ("first([1, 2, 3])", 1),
+      ("first([])", nil),
+      ("first(1)", "Argument to `first` must be array. Got integer."),
+      ("last([1, 2, 3])", 3),
+      ("last([])", nil),
+      ("last(1)", "Argument to `last` must be array. Got integer."),
+      ("rest([1, 2, 3])", [2, 3]),
+      ("rest([])", nil),
+      ("push([], 1)", [1]),
+      ("push(1, 1)", "Argument to `push` must be array. Got integer."),
     ]
 
     for testCase in tests {
@@ -364,8 +364,33 @@ final class EvaluatorTest: XCTestCase {
           try validateIntegerObject(evaluated, expected: exptectedInt)
         }
 
+      case let expectedArray as Array<Int>:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else if let arrayObj = evaluated as? ArrayObject {
+          XCTAssertEqual(arrayObj.elements.count, expectedArray.count)
+
+          for (i, expectedElem) in expectedArray.enumerated() {
+            try validateIntegerObject(arrayObj.elements[i], expected: expectedElem)
+          }
+
+        } else {
+          XCTFail("Object not ArrayObject. Got=\(evaluated)")
+          return
+        }
+
       default:
-        XCTFail()
+        if testCase.expected == nil {
+          if evaluated is OkObject || evaluated is NullObject {
+            // All good. Continue
+          } else {
+            XCTFail("Expected `nil`. Got=\(evaluated)")
+            return
+          }
+        } else {
+          XCTFail("Unsupported type in the test case.")
+          return
+        }
       }
     }
   }
