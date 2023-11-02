@@ -637,6 +637,34 @@ final class ParserTest: XCTestCase {
   }
 
 
+  func testParsingIndexExpressions() throws {
+    let input = "myArray[1 + 1]"
+    let lexer = Lexer(input: input)
+    let parser = Parser(lexer: lexer)
+
+    guard let program = parser.parseProgram() else {
+      XCTFail("`parseProgram()` failed to parse the input.")
+      return
+    }
+    guard !checkParserErrors(parser) else {
+      XCTFail("Test failed due to preceding parser errors.")
+      return
+    }
+
+    XCTAssertEqual(program.statements.count, 1)
+    guard let expressionStmt = program.statements.first as? ExpressionStatement,
+          let indexExpr = expressionStmt.expression as? IndexExpression
+    else {
+      XCTFail("expressionStatement.expression is not of the type `IndexExpression`.")
+      return
+    }
+
+    try validateIdentifier(indexExpr.left, expectedValue: "myArray")
+
+    try validateInfixExpression(indexExpr.index, leftValue: 1, operator: "+", rightValue: 1)
+  }
+
+
   // MARK: - Stringly Tests
 
   func testInfixExpressions_Stringly() throws {
@@ -685,7 +713,9 @@ final class ParserTest: XCTestCase {
       ("!(true == true)", "(!(true == true))"),
       ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
       ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"),
-      ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")
+      ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"),
+      ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+      ("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"),
     ]
     for testCase in tests {
       let lexer = Lexer(input: testCase.input)

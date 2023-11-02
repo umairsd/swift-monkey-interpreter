@@ -20,7 +20,7 @@ public class ArrayLiteral: Expression {
   public func toString() -> String {
     var output = ""
     output += "["
-    output += elements.map{ $0.toString() }.joined(separator: ",")
+    output += elements.map{ $0.toString() }.joined(separator: ", ")
     output += "]"
     return output
   }

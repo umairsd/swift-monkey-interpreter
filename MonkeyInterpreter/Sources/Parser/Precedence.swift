@@ -12,4 +12,5 @@ public enum Precedence: Int {
   case product // *
   case prefix // -x or !x
   case call // myFunction(x)
+  case index
 }

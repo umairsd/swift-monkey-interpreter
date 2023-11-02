@@ -62,6 +62,7 @@ public class Parser {
     registerInfix(for: .eq, fn: parseInfixExpression(left:))
     registerInfix(for: .notEq, fn: parseInfixExpression(left:))
     registerInfix(for: .lParen, fn: parseCallExpression(left:))
+    registerInfix(for: .lBracket, fn: parseIndexExpression(left:))
   }
 
 
@@ -121,7 +122,7 @@ public class Parser {
       return nil
     }
     guard let intValue = Int(currentToken.literal) else {
-      fatalError("Unable to parse integer from the value. Got=\(currentToken.literal)")
+      fatalError("\(#function): Unable to parse integer from the value. Got=\(currentToken.literal)")
     }
     return IntegerLiteral(token: self.currentToken, value: intValue)
   }
@@ -309,35 +310,35 @@ public class Parser {
     incrementTokens()
 
     guard let condition = parseExpression(withPrecedence: .lowest) else {
-      errors.append("IfExpression: Unable to parse the condition.")
+      errors.append("\(#function): Unable to parse the condition.")
       return nil
     }
 
     // After this call, the currentToken is the ) of the condition.
     guard expectPeekAndIncrement(.rParen) else {
-      errors.append("IfExpression: Didn't find the closing `)` for the condition.")
+      errors.append("\(#function): Didn't find the closing `)` for the condition.")
       return nil
     }
     // After this call, the currentToken is the { of the consequence block.
     guard expectPeekAndIncrement(.lBrace) else {
-      errors.append("IfExpression: Didn't find the opening `{` for the consequence block.")
+      errors.append("v: Didn't find the opening `{` for the consequence block.")
       return nil
     }
 
     guard let consequence = parseBlockStatement() else {
-      errors.append("IfExpression: Unable to parse the `BlockStatement` for the consequence block.")
+      errors.append("\(#function): Unable to parse the `BlockStatement` for the consequence block.")
       return nil
     }
 
     if peekTokenIs(.else) {
       incrementTokens()
       guard expectPeekAndIncrement(.lBrace) else {
-        errors.append("IfExpression: Didn't find the opening `{` for the alternative block.")
+        errors.append("\(#function): Didn't find the opening `{` for the alternative block.")
         return nil
       }
 
       guard let alt = parseBlockStatement() else {
-        errors.append("IfExpression: Unable to parse the `BlockStatement` for the alternative block.")
+        errors.append("\(#function): Unable to parse the `BlockStatement` for the alternative block.")
         return nil
       }
 
@@ -378,7 +379,7 @@ public class Parser {
     incrementTokens()
 
     guard let rightExpression = parseExpression(withPrecedence: .prefix) else {
-      errors.append("Unable to parse the right expression for the Prefix Expression.")
+      errors.append("\(#function): Unable to parse the right expression for the Prefix Expression.")
       return nil
     }
 
@@ -402,7 +403,7 @@ public class Parser {
     incrementTokens()
 
     guard let right = parseExpression(withPrecedence: precedence) else {
-      errors.append("Unable to parse the right expression for the Infix Expression.")
+      errors.append("\(#function): Unable to parse the right expression for the Infix Expression.")
       return nil
     }
 
@@ -412,6 +413,28 @@ public class Parser {
       infixOperator: infixOperator,
       rightExpression: right)
     return expr
+  }
+
+
+  private func parseIndexExpression(left: Expression?) -> IndexExpression? {
+    guard let leftExpr = left else { return nil }
+
+    guard currentTokenIs(.lBracket) else {
+      errors.append("\(#function): Invalid starting token. Got=\(currentToken.type)")
+      return nil
+    }
+
+    let t = currentToken
+    incrementTokens()
+    guard let index = parseExpression(withPrecedence: .lowest) else {
+      errors.append("\(#function): Could not parse the body of the function.")
+      return nil
+    }
+
+    if !expectPeekAndIncrement(.rBracket) {
+      return nil
+    }
+    return IndexExpression(token: t, left: leftExpr, index: index)
   }
 
 
@@ -462,19 +485,19 @@ public class Parser {
     let t = currentToken // Points to "fn"
 
     guard expectPeekAndIncrement(.lParen) else {
-      errors.append("parseFunctionLiteral: Didn't find the opening `(` for the function.")
+      errors.append("\(#function): Didn't find the opening `(` for the function.")
       return nil
     }
 
     let parameters = parseFunctionParameters()
 
     guard expectPeekAndIncrement(.lBrace) else {
-      errors.append("parseFunctionLiteral: Didn't find the opening `{` for the function's body.")
+      errors.append("\(#function): Didn't find the opening `{` for the function's body.")
       return nil
     }
 
     guard let body = parseBlockStatement() else {
-      errors.append("parseFunctionLiteral: Could not parse the body of the function.")
+      errors.append("\(#function): Could not parse the body of the function.")
       return nil
     }
 
