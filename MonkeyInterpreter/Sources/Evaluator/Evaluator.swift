@@ -96,8 +96,28 @@ public struct Evaluator {
     case let ifExpr as IfExpression:
       return evalIfExpression(ifExpr, within: environment)
 
+
+    case let arrayLiteral as ArrayLiteral:
+      let elements = evalExpressions(arrayLiteral.elements, within: environment)
+      if elements.count == 1 && isErrorObject(elements.first!) {
+        return elements.first!
+      }
+      return ArrayObject(elements: elements)
+
+    case let indexExpr as IndexExpression:
+      let left = eval(indexExpr.left, within: environment)
+      if isErrorObject(left) {
+        return left
+      }
+      let index = eval(indexExpr.index, within: environment)
+      if isErrorObject(index) {
+        return index
+      }
+      return evalIndexExpression(for: left, with: index)
+
     default:
-      return newError(for: "Nil node.")
+      return newError(
+        for: "\(#function): Unknown node. Got=\(node.toString()), Type=\(node.tokenLiteral())")
     }
   }
 
@@ -206,6 +226,27 @@ public struct Evaluator {
     }
 
     return newError(for: "Not a function: \(fn.type())")
+  }
+
+
+  private func evalIndexExpression(for left: Object, with index: Object) -> Object {
+
+    guard let arrayObj = left as? ArrayObject, arrayObj.type() == .array else {
+      return newError(for: "Index operator not supported: \(left.type())")
+    }
+    return evalArrayIndexExpression(arrayObj, index: index)
+  }
+
+
+  private func evalArrayIndexExpression(_ arrayObject: ArrayObject, index: Object) -> Object {
+    guard let idx = index as? IntegerObject else {
+      return newError(for: "")
+    }
+
+    if idx.value < 0 || idx.value >= arrayObject.elements.count {
+      return nullObject
+    }
+    return arrayObject.elements[idx.value]
   }
 
 
