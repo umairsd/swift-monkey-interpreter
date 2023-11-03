@@ -113,7 +113,7 @@ public class Parser {
     }
 
     let t = currentToken
-    var pairs: [DictionaryEntity] = []
+    var pairs: [DictionaryLiteralPair] = []
 
     while !peekTokenIs(.rBrace) {
       incrementTokens()
@@ -131,7 +131,7 @@ public class Parser {
         return nil
       }
 
-      pairs.append(DictionaryEntity(key: key, value: value))
+      pairs.append(DictionaryLiteralPair(key: key, value: value))
 
       if !peekTokenIs(.rBrace) && !expectPeekAndIncrement(.comma) {
         return nil

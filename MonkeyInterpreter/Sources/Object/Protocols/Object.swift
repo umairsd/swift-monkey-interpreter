@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Every value in the Monkey source code will be wrapped inside a struct, which fulfills
+/// Every value in the Monkey source code will be wrapped inside a type, which fulfills
 /// this `Object` interface.
 public protocol Object: AnyObject {
 

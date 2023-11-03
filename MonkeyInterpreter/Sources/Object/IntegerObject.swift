@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// A type that wraps integer values.
+/// A type to represents an integer in the Monkey programming langauge.
 public class IntegerObject: Object {
   /// The value being wrapped by the `Integer` type.
   public let value: Int
@@ -19,5 +19,17 @@ public class IntegerObject: Object {
 
   public func inspect() -> String {
     return String(value)
+  }
+}
+
+
+extension IntegerObject: DictionaryKey {
+
+  public static func == (lhs: IntegerObject, rhs: IntegerObject) -> Bool {
+    return lhs.value == rhs.value
+  }
+  
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(value)
   }
 }

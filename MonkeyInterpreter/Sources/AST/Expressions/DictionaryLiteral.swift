@@ -3,8 +3,8 @@
 import Foundation
 import Token
 
-
-public class DictionaryEntity {
+/// A type that's used as the element type for the `DictionaryLiteral` type.
+public class DictionaryLiteralPair {
   public let key: Expression
   public let value: Expression
 
@@ -18,9 +18,9 @@ public class DictionaryEntity {
 /// A type that represents a dictionary.
 public class DictionaryLiteral: Expression {
 
-  public let pairs: [DictionaryEntity]
+  public let pairs: [DictionaryLiteralPair]
 
-  public init(token: Token, pairs: [DictionaryEntity]) {
+  public init(token: Token, pairs: [DictionaryLiteralPair]) {
     self.pairs = pairs
     self.token = token
   }

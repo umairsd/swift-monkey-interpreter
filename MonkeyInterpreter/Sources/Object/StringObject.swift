@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// A type that wraps String values.
+/// A type to represent a string in the Monkey programming langauge.
 public class StringObject: Object {
 
   public let value: String
@@ -19,5 +19,17 @@ public class StringObject: Object {
 
   public func inspect() -> String {
     return value
+  }
+}
+
+
+extension StringObject: DictionaryKey {
+
+  public static func == (lhs: StringObject, rhs: StringObject) -> Bool {
+    return lhs.value == rhs.value
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(value)
   }
 }

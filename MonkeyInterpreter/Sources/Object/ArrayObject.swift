@@ -2,8 +2,8 @@
 
 import Foundation
 
+/// A type to represent arrays in the Monkey programming langauge.
 public class ArrayObject: Object {
-
   public let elements: [Object]
 
   public init(elements: [Object]) {

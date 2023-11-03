@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// An type that wraps an error message.
+/// A type to represents an error in the Monkey programming langauge.
 public class ErrorObject: Object {
   /// The error message.
   public let message: String

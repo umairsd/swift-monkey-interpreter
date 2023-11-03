@@ -9,6 +9,7 @@ public enum ObjectType {
   case boolean
   case string
   case array
+  case dictionary
   case null
   case `return`
   case error

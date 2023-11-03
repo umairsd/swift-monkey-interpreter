@@ -3,6 +3,8 @@
 import Foundation
 import AST
 
+
+/// A type to represents a function in the Monkey programming langauge.
 public class FunctionObject: Object {
 
   public let parameters: [Identifier]
