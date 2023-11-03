@@ -135,6 +135,52 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
+  func testEvalDictionaryLiteral() throws {
+    let input = """
+    let two = "two";
+    {
+      "one": 10 - 9,
+      two: 1 + 1,
+      "thr" + "ee": 6 / 2,
+      4: 4,
+      true: 5,
+      false: 6
+    }
+    """
+
+    let expected: [AnyHashable: Int] = [
+      StringObject(value: "one"): 1,
+      StringObject(value: "two"): 2,
+      StringObject(value: "three"): 3,
+      IntegerObject(value: 4): 4,
+      BooleanObject(value: true): 5,
+      BooleanObject(value: false): 6,
+    ]
+
+    let evaluated = runEval(input)
+    if let errorObj = evaluated as? ErrorObject {
+      XCTFail(errorObj.message)
+      return
+    }
+
+    guard let dict = evaluated as? DictionaryObject else {
+      XCTFail("The evaluated result is not a `DictionaryObject`")
+      return
+    }
+
+    XCTAssertEqual(dict.innerMap.count, expected.count)
+
+    for (expectedKey, expectedValue) in expected {
+      guard let pair = dict.innerMap[expectedKey] else {
+        XCTFail("No value in the innerMap for the given key \(expectedKey).")
+        return
+      }
+
+      try validateIntegerObject(pair.value, expected: expectedValue)
+    }
+  }
+
+
   func testBangOperator() throws {
     let tests: [(input: String, expected: Bool)] = [
       ("!true", false),

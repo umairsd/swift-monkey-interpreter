@@ -54,6 +54,16 @@ public struct Evaluator {
     case let strLiteral as StringLiteral:
       return StringObject(value: strLiteral.value)
 
+    case let arrayLiteral as ArrayLiteral:
+      let elements = evalExpressions(arrayLiteral.elements, within: environment)
+      if elements.count == 1 && isErrorObject(elements.first!) {
+        return elements.first!
+      }
+      return ArrayObject(elements: elements)
+
+    case let dictLiteral as DictionaryLiteral:
+      return evalDictionaryLiteral(dictLiteral, within: environment)
+
     case let identifer as Identifier:
       return evalIdentifier(identifer, within: environment)
 
@@ -95,14 +105,6 @@ public struct Evaluator {
 
     case let ifExpr as IfExpression:
       return evalIfExpression(ifExpr, within: environment)
-
-
-    case let arrayLiteral as ArrayLiteral:
-      let elements = evalExpressions(arrayLiteral.elements, within: environment)
-      if elements.count == 1 && isErrorObject(elements.first!) {
-        return elements.first!
-      }
-      return ArrayObject(elements: elements)
 
     case let indexExpr as IndexExpression:
       let left = eval(indexExpr.left, within: environment)
@@ -212,7 +214,7 @@ public struct Evaluator {
     }
     return result
   }
-
+  
 
   private func applyFunctionObject(_ fn: Object, to arguments: [Object]) -> Object {
     if let functionObj = fn as? FunctionObject, functionObj.type() == .function {
@@ -229,25 +231,37 @@ public struct Evaluator {
   }
 
 
-  private func evalIndexExpression(for left: Object, with index: Object) -> Object {
+  private func evalDictionaryLiteral(
+    _ dictionaryLiteral: DictionaryLiteral,
+    within environment: Environment
+  ) -> Object {
 
-    guard let arrayObj = left as? ArrayObject, arrayObj.type() == .array else {
-      return newError(for: "Index operator not supported: \(left.type())")
+    var keyValues: [AnyHashable: DictionaryObjectPair] = [:]
+
+    for p in dictionaryLiteral.pairs {
+      let key = eval(p.key, within: environment)
+      if isErrorObject(key) {
+        return key
+      }
+
+      guard key is any DictionaryKey else {
+        return newError(for: "Unusable as a dictionary key: \(key.type())")
+      }
+      guard let dictionaryKey = key as? AnyHashable else {
+        return newError(for: "Unusable as a dictionary key: \(key.type())")
+      }
+
+      let value = eval(p.value, within: environment)
+      if isErrorObject(value) {
+        return value
+      }
+
+      keyValues[dictionaryKey] = DictionaryObjectPair(key: key, value: value)
     }
-    return evalArrayIndexExpression(arrayObj, index: index)
+
+    return DictionaryObject(valuesMap: keyValues)
   }
 
-
-  private func evalArrayIndexExpression(_ arrayObject: ArrayObject, index: Object) -> Object {
-    guard let idx = index as? IntegerObject else {
-      return newError(for: "")
-    }
-
-    if idx.value < 0 || idx.value >= arrayObject.elements.count {
-      return nullObject
-    }
-    return arrayObject.elements[idx.value]
-  }
 
 
   // MARK: Evaluators (Infix)
@@ -348,6 +362,26 @@ public struct Evaluator {
     }
   }
 
+
+  private func evalIndexExpression(for left: Object, with index: Object) -> Object {
+
+    guard let arrayObj = left as? ArrayObject, arrayObj.type() == .array else {
+      return newError(for: "Index operator not supported: \(left.type())")
+    }
+    return evalArrayIndexExpression(arrayObj, index: index)
+  }
+
+
+  private func evalArrayIndexExpression(_ arrayObject: ArrayObject, index: Object) -> Object {
+    guard let idx = index as? IntegerObject else {
+      return newError(for: "")
+    }
+
+    if idx.value < 0 || idx.value >= arrayObject.elements.count {
+      return nullObject
+    }
+    return arrayObject.elements[idx.value]
+  }
 
 
   // MARK: Evaluators (Prefix)
