@@ -135,52 +135,6 @@ final class EvaluatorTest: XCTestCase {
   }
 
 
-  func testEvalDictionaryLiteral() throws {
-    let input = """
-    let two = "two";
-    {
-      "one": 10 - 9,
-      two: 1 + 1,
-      "thr" + "ee": 6 / 2,
-      4: 4,
-      true: 5,
-      false: 6
-    }
-    """
-
-    let expected: [AnyHashable: Int] = [
-      StringObject(value: "one"): 1,
-      StringObject(value: "two"): 2,
-      StringObject(value: "three"): 3,
-      IntegerObject(value: 4): 4,
-      BooleanObject(value: true): 5,
-      BooleanObject(value: false): 6,
-    ]
-
-    let evaluated = runEval(input)
-    if let errorObj = evaluated as? ErrorObject {
-      XCTFail(errorObj.message)
-      return
-    }
-
-    guard let dict = evaluated as? DictionaryObject else {
-      XCTFail("The evaluated result is not a `DictionaryObject`")
-      return
-    }
-
-    XCTAssertEqual(dict.innerMap.count, expected.count)
-
-    for (expectedKey, expectedValue) in expected {
-      guard let pair = dict.innerMap[expectedKey] else {
-        XCTFail("No value in the innerMap for the given key \(expectedKey).")
-        return
-      }
-
-      try validateIntegerObject(pair.value, expected: expectedValue)
-    }
-  }
-
-
   func testBangOperator() throws {
     let tests: [(input: String, expected: Bool)] = [
       ("!true", false),
@@ -281,7 +235,6 @@ final class EvaluatorTest: XCTestCase {
        }
        """, "Unknown operator: boolean + boolean"),
       ("foobar", "Identifier not found: foobar"),
-
       ("\"hello, \" - \"world!\"", "Unknown operator: string - string"),
     ]
 
@@ -293,6 +246,190 @@ final class EvaluatorTest: XCTestCase {
       }
 
       XCTAssertEqual(errorObj.message, testCase.expectedMessage)
+    }
+  }
+
+
+  // MARK: - Dictionary
+
+
+  func testEvalDictionaryLiteral() throws {
+    let input = """
+    let two = "two";
+    {
+      "one": 10 - 9,
+      two: 1 + 1,
+      "thr" + "ee": 6 / 2,
+      4: 4,
+      true: 5,
+      false: 6
+    }
+    """
+
+    let expected: [AnyHashable: Int] = [
+      StringObject(value: "one"): 1,
+      StringObject(value: "two"): 2,
+      StringObject(value: "three"): 3,
+      IntegerObject(value: 4): 4,
+      BooleanObject(value: true): 5,
+      BooleanObject(value: false): 6,
+    ]
+
+    let evaluated = runEval(input)
+    if let errorObj = evaluated as? ErrorObject {
+      XCTFail(errorObj.message)
+      return
+    }
+
+    guard let dict = evaluated as? DictionaryObject else {
+      XCTFail("The evaluated result is not a `DictionaryObject`")
+      return
+    }
+
+    XCTAssertEqual(dict.innerMap.count, expected.count)
+
+    for (expectedKey, expectedValue) in expected {
+      guard let pair = dict.innerMap[expectedKey] else {
+        XCTFail("No value in the innerMap for the given key \(expectedKey).")
+        return
+      }
+
+      try validateIntegerObject(pair.value, expected: expectedValue)
+    }
+  }
+
+
+  // MARK: - Array
+
+
+  func testArrayIndexExpressions() throws {
+    let tests: [(input: String, expected: Any?)] = [
+      ("[1, 2, 3][0]", 1),
+      ("[1, 2, 3][1]", 2),
+      ("[1, 2, 3][2]", 3),
+      ("let i = 0; [1][i];", 1),
+      ("[1, 2, 3][1 + 1];", 3),
+      ("let myArray = [1, 2, 3]; myArray[2];", 3),
+      ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+      ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
+      ("[1, 2, 3][3]", nil),
+      ("[1, 2, 3][-1]",  nil),
+    ]
+
+    for testCase in tests {
+      let evaluated = runEval(testCase.input)
+
+      switch testCase.expected {
+      case let expectedStr as String:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTAssertEqual(errorObj.message, expectedStr)
+        } else {
+          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
+        }
+
+      case let exptectedInt as Int:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else {
+          try validateIntegerObject(evaluated, expected: exptectedInt)
+        }
+
+      default:
+        guard let _ = evaluated as? NullObject, testCase.expected == nil else  {
+          XCTFail("Got as NullObject when the expectation was not nil.")
+          return
+        }
+      }
+    }
+  }
+
+
+  func testArrayOperations() throws {
+    let tests: [(input: String, expected: Any?)] = [
+      ("""
+      let map = fn(arr, f) {
+        let iter = fn(arr, accumulated) {
+          if (len(arr) == 0) {
+            accumulated
+          } else {
+            iter(rest(arr), push(accumulated, f(first(arr))));
+          }
+        };
+
+        iter(arr, []);
+      };
+
+      let a = [1, 2, 3, 4];
+      let double = fn(x) { x * 2 };
+      map(a, double);
+      """, [2,4,6,8]),
+
+      ("""
+      let reduce = fn(arr, initial, f) {
+        let iter = fn(arr, result) {
+          if (len(arr) == 0) {
+            result
+          } else {
+            iter(rest(arr), f(result, first(arr)));
+          }
+        };
+        iter(arr, initial);
+      };
+
+      let sum = fn(arr) {
+        reduce(arr, 0, fn(initial, el) { initial + el });
+      };
+
+      sum([1,2,3,4,5]);
+      """, 15)
+    ]
+
+    for testCase in tests {
+      let evaluated = runEval(testCase.input)
+
+      switch testCase.expected {
+      case let expectedStr as String:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTAssertEqual(errorObj.message, expectedStr)
+        } else {
+          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
+        }
+
+      case let exptectedInt as Int:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else {
+          try validateIntegerObject(evaluated, expected: exptectedInt)
+        }
+
+      case let expectedArray as Array<Int>:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else if let arrayObj = evaluated as? ArrayObject {
+          XCTAssertEqual(arrayObj.elements.count, expectedArray.count)
+
+          for (i, expectedElem) in expectedArray.enumerated() {
+            try validateIntegerObject(arrayObj.elements[i], expected: expectedElem)
+          }
+
+        } else {
+          XCTFail("Object not ArrayObject. Got=\(evaluated)")
+          return
+        }
+
+      default:
+        if testCase.expected == nil {
+          if evaluated is OkObject || evaluated is NullObject {
+            // All good. Continue
+          } else {
+            XCTFail("Expected `nil`. Got=\(evaluated)")
+            return
+          }
+        } else {
+          XCTFail("Unsupported type in the test case.")
+          return
+        }
+      }
     }
   }
 
@@ -390,138 +527,6 @@ final class EvaluatorTest: XCTestCase {
       ("rest([])", nil),
       ("push([], 1)", [1]),
       ("push(1, 1)", "Argument to `push` must be array. Got integer."),
-    ]
-
-    for testCase in tests {
-      let evaluated = runEval(testCase.input)
-
-      switch testCase.expected {
-      case let expectedStr as String:
-        if let errorObj = evaluated as? ErrorObject {
-          XCTAssertEqual(errorObj.message, expectedStr)
-        } else {
-          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
-        }
-
-      case let exptectedInt as Int:
-        if let errorObj = evaluated as? ErrorObject {
-          XCTFail(errorObj.message)
-        } else {
-          try validateIntegerObject(evaluated, expected: exptectedInt)
-        }
-
-      case let expectedArray as Array<Int>:
-        if let errorObj = evaluated as? ErrorObject {
-          XCTFail(errorObj.message)
-        } else if let arrayObj = evaluated as? ArrayObject {
-          XCTAssertEqual(arrayObj.elements.count, expectedArray.count)
-
-          for (i, expectedElem) in expectedArray.enumerated() {
-            try validateIntegerObject(arrayObj.elements[i], expected: expectedElem)
-          }
-
-        } else {
-          XCTFail("Object not ArrayObject. Got=\(evaluated)")
-          return
-        }
-
-      default:
-        if testCase.expected == nil {
-          if evaluated is OkObject || evaluated is NullObject {
-            // All good. Continue
-          } else {
-            XCTFail("Expected `nil`. Got=\(evaluated)")
-            return
-          }
-        } else {
-          XCTFail("Unsupported type in the test case.")
-          return
-        }
-      }
-    }
-  }
-
-
-  func testArrayIndexExpressions() throws {
-    let tests: [(input: String, expected: Any?)] = [
-      ("[1, 2, 3][0]", 1),
-      ("[1, 2, 3][1]", 2),
-      ("[1, 2, 3][2]", 3),
-      ("let i = 0; [1][i];", 1),
-      ("[1, 2, 3][1 + 1];", 3),
-      ("let myArray = [1, 2, 3]; myArray[2];", 3),
-      ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
-      ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
-      ("[1, 2, 3][3]", nil),
-      ("[1, 2, 3][-1]",  nil),
-    ]
-
-    for testCase in tests {
-      let evaluated = runEval(testCase.input)
-
-      switch testCase.expected {
-      case let expectedStr as String:
-        if let errorObj = evaluated as? ErrorObject {
-          XCTAssertEqual(errorObj.message, expectedStr)
-        } else {
-          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
-        }
-
-      case let exptectedInt as Int:
-        if let errorObj = evaluated as? ErrorObject {
-          XCTFail(errorObj.message)
-        } else {
-          try validateIntegerObject(evaluated, expected: exptectedInt)
-        }
-
-      default:
-        guard let _ = evaluated as? NullObject, testCase.expected == nil else  {
-          XCTFail("Got as NullObject when the expectation was not nil.")
-          return
-        }
-      }
-    }
-  }
-
-
-  func testArrayOperations() throws {
-    let tests: [(input: String, expected: Any?)] = [
-      ("""
-      let map = fn(arr, f) {
-        let iter = fn(arr, accumulated) {
-          if (len(arr) == 0) {
-            accumulated
-          } else {
-            iter(rest(arr), push(accumulated, f(first(arr))));
-          }
-        };
-
-        iter(arr, []);
-      };
-
-      let a = [1, 2, 3, 4];
-      let double = fn(x) { x * 2 };
-      map(a, double);
-      """, [2,4,6,8]),
-
-      ("""
-      let reduce = fn(arr, initial, f) {
-        let iter = fn(arr, result) {
-          if (len(arr) == 0) {
-            result
-          } else {
-            iter(rest(arr), f(result, first(arr))); 
-          }
-        };
-        iter(arr, initial);
-      };
-
-      let sum = fn(arr) {
-        reduce(arr, 0, fn(initial, el) { initial + el });
-      };
-
-      sum([1,2,3,4,5]);
-      """, 15)
     ]
 
     for testCase in tests {
