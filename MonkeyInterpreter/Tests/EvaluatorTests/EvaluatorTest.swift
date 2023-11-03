@@ -236,6 +236,9 @@ final class EvaluatorTest: XCTestCase {
        """, "Unknown operator: boolean + boolean"),
       ("foobar", "Identifier not found: foobar"),
       ("\"hello, \" - \"world!\"", "Unknown operator: string - string"),
+      ("""
+       {"name": "Monkey"}[fn(x) { x }];
+       """, "The index is not a `DictionaryKey`. Got=function"),
     ]
 
     for testCase in tests {
@@ -295,6 +298,45 @@ final class EvaluatorTest: XCTestCase {
       }
 
       try validateIntegerObject(pair.value, expected: expectedValue)
+    }
+  }
+
+
+  func testDictionaryIndexExpressions() throws {
+    let tests: [(input: String, expected: Any?)] = [
+      ( "{\"foo\": 5}[\"foo\"]", 5),
+      ( "{\"foo\": 5}[\"bar\"]", nil),
+      ( "let key = \"foo\"; {\"foo\": 5}[key]", 5),
+      ( "{}[\"foo\"]", nil),
+      ( "{5: 5}[5]", 5),
+      ( "{true: 5}[true]", 5),
+      ( "{false: 5}[false]", 5),
+    ]
+
+    for testCase in tests {
+      let evaluated = runEval(testCase.input)
+
+      switch testCase.expected {
+      case let expectedStr as String:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTAssertEqual(errorObj.message, expectedStr)
+        } else {
+          XCTFail("Object is not ErrorObject. Got=\(evaluated)")
+        }
+
+      case let exptectedInt as Int:
+        if let errorObj = evaluated as? ErrorObject {
+          XCTFail(errorObj.message)
+        } else {
+          try validateIntegerObject(evaluated, expected: exptectedInt)
+        }
+
+      default:
+        guard let _ = evaluated as? NullObject, testCase.expected == nil else  {
+          XCTFail("Got as NullObject when the expectation was not nil.")
+          return
+        }
+      }
     }
   }
 

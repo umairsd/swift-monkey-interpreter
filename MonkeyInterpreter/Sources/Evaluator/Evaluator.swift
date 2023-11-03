@@ -364,17 +364,21 @@ public struct Evaluator {
 
 
   private func evalIndexExpression(for left: Object, with index: Object) -> Object {
-
-    guard let arrayObj = left as? ArrayObject, arrayObj.type() == .array else {
-      return newError(for: "Index operator not supported: \(left.type())")
+    if let arrayObj = left as? ArrayObject, arrayObj.type() == .array {
+      return evalArrayIndexExpression(arrayObj, index: index)
     }
-    return evalArrayIndexExpression(arrayObj, index: index)
+
+    if let dictObj = left as? DictionaryObject, dictObj.type() == .dictionary {
+      return evalDictionaryIndexExpression(dictObj, index: index)
+    }
+
+    return newError(for: "Index operator not supported: \(left.type())")
   }
 
 
   private func evalArrayIndexExpression(_ arrayObject: ArrayObject, index: Object) -> Object {
     guard let idx = index as? IntegerObject else {
-      return newError(for: "")
+      return newError(for: "The index is not an `IntegerObject`. Got=\(index.type())")
     }
 
     if idx.value < 0 || idx.value >= arrayObject.elements.count {
@@ -382,6 +386,23 @@ public struct Evaluator {
     }
     return arrayObject.elements[idx.value]
   }
+
+
+  private func evalDictionaryIndexExpression(_ dictObj: DictionaryObject, index: Object) -> Object {
+    guard index is any DictionaryKey else {
+      return newError(for: "The index is not a `DictionaryKey`. Got=\(index.type())")
+    }
+    guard let dictionaryKey = index as? AnyHashable else {
+      return newError(for: "The index is not a `DictionaryKey`. Got=\(index.type())")
+    }
+
+    guard let dictObjPair = dictObj.innerMap[dictionaryKey] else {
+      return nullObject
+    }
+
+    return dictObjPair.value
+  }
+
 
 
   // MARK: Evaluators (Prefix)
