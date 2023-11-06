@@ -8,7 +8,7 @@ This repo is the Swift implementation of the interpreter for the Monkey language
 Download this project. In Xcode, go to `File` -> `Open`, and open the root level directory for this repo. The entire project should open up in Xcode.
 
 ### Command Line
-Download this project, and from the root directly, here's the set of  commands to run the code or to run the test suite.
+Download this project. From the root  directory, run the following set of commands:
 
 ```shell
 # Start up the monkey REPL
